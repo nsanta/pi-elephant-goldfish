@@ -7,13 +7,13 @@
 
 ## Tasks
 
-### Phase 0 — Scaffold (in progress)
-- [ ] package.json with `pi` key, `pi-package` keyword, host peerDependencies
-- [ ] minimal `extensions/egm-core.ts` extension entry
-- [ ] `UPSTREAM.md` (pin + policy) and `scripts/sync-upstream.sh`
-- [ ] .gitignore node_modules
-- [ ] Acceptance: `pi -e .` loads with no extension errors
-- **Evidence:** (pending)
+### Phase 0 — Scaffold (done)
+- [x] package.json with `pi` key, `pi-package` keyword, host peerDependencies
+- [x] minimal `extensions/egm-core.ts` extension entry
+- [x] `UPSTREAM.md` (pin + policy) and `scripts/sync-upstream.sh` + adapt-pi.mjs stub
+- [x] .gitignore (node_modules, dist, .pi/)
+- [x] Acceptance: `pi -e .` loads with no extension errors (verified: exit 0, reply OK, zero package warnings)
+- **Evidence:** commit `1d1e9b0` feat: scaffold pi package skeleton (phase 0)
 
 ### Phase 1 — Vendor content + adaptation layer
 - [ ] Vendor skills/ agents/ resources/ from upstream clone
