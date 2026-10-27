@@ -1,0 +1,6 @@
+.atl/
+.pi/
+
+# Local Pi runtime state
+node_modules/
+dist/

@@ -1,0 +1,25 @@
+{
+  "name": "pi-elephant-goldfish",
+  "version": "0.1.0",
+  "description": "Elephant-Goldfish Model (EGM) for Pi: draft specs with a deep-context Elephant and stress-test them with zero-context Goldfish reviewers.",
+  "keywords": ["pi-package", "spec-driven-development", "design-documents", "design-review", "elephant-goldfish-model"],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/undefined/pi-elephant-goldfish.git"
+  },
+  "type": "module",
+  "pi": {
+    "extensions": ["extensions/*.ts"],
+    "skills": ["skills/*"],
+    "prompts": []
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "private": true
+}
