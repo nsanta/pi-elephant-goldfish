@@ -15,13 +15,13 @@
 - [x] Acceptance: `pi -e .` loads with no extension errors (verified: exit 0, reply OK, zero package warnings)
 - **Evidence:** commit `1d1e9b0` feat: scaffold pi package skeleton (phase 0)
 
-### Phase 1 — Vendor content + adaptation layer
-- [ ] Vendor skills/ agents/ resources/ from upstream clone
-- [ ] scripts/adapt-pi.mjs: scripted substitutions (delegation paragraph, harness doc header, ask_question → egm_ask), drift-detecting (fails if pattern missing)
-- [ ] docs/pi.md harness placeholder
-- [ ] checks: frontmatter validity + link integrity (scripts/check-content.mjs)
-- [ ] Acceptance: all 7 skills discoverable, checks green
-- **Evidence:** (pending)
+### Phase 1 — Vendor content + adaptation layer (done)
+- [x] Vendor skills/ agents/ resources/ from upstream clone (7 skills/37 files, 9 agents, 7 resources)
+- [x] scripts/adapt-pi.mjs: scripted substitutions applied — header 7/7, delegation 4/4 spawning skills, egm_ask rename 13, ../../ paths; drift-detecting (fails on missing anchors)
+- [x] docs/pi.md harness guide (install, delegation mapping, artifact dir, support status)
+- [x] checks: scripts/check-content.mjs — frontmatter 16/16 pass, link integrity 32 files with documented 2-entry allowlist (TESTING.md → Phase 5, docs/index.md → no equivalent)
+- [x] Acceptance: sync exit 0; checks exit 0; package loads via `pi -e .`; extension command `/egm-version` RPC disposition=handled; skills registered `/skill:egm-*` (hidden from model auto-invocation by upstream `disable-model-invocation: true`)
+- **Evidence:** delegated to gentle-ai-worker (task mvs2oleu-1-ngbr) + parent verification; commit recorded below
 
 ### Phase 2 — Core extension runtime
 - [ ] egm_ask single-select gate tool (ctx.ui.custom, invariants, non-UI fallback)
