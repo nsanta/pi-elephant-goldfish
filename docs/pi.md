@@ -7,10 +7,13 @@ to the [Pi coding agent](https://github.com/earendil-works/pi-coding-agent).
 
 This repository is a Pi package: the EGM skills, reviewer personas, and document
 standards are vendored content, while the harness-specific behavior lives in a
-Pi extension (`extensions/`) that registers two tools on session start. Instead
-of your harness's native subagent and question tools, Pi sessions drive EGM
-through these extension-registered tools: `egm_goldfish` (zero-context reviewer
-spawning) and `egm_ask` (single-select interactive gates). The vendored skill
+Pi extension (`extensions/`) that registers three tools and a set of `/egm-*`
+commands on session start. Instead of your harness's native subagent and
+question tools, Pi sessions drive EGM through these extension-registered tools:
+`egm_goldfish` (zero-context reviewer spawning), `egm_ask` (single-select
+interactive gates), and `egm_state` (durable pipeline state); the `/egm-*`
+commands start each vendored skill by name (see [Commands](#commands)). The
+vendored skill
 text is byte-identical to upstream except for minimal scripted adaptations
 (see `UPSTREAM.md` and `scripts/adapt-pi.mjs`); never hand-edit vendored files.
 
@@ -52,9 +55,52 @@ the session. The upstream `AGENTS.md` convention still works: if the project's
 `AGENTS.md` contains a line `EGM artifact directory: <path>`, EGM writes its
 artifacts to that folder instead.
 
+## Commands
+
+The extension registers seven `/egm-*` commands, one per vendored skill. Each
+command reads the skill's `SKILL.md`, strips the YAML frontmatter, and sends
+the body as your message (with your command arguments appended), so the model
+receives the upstream instructions directly. This is equivalent to running the
+corresponding `/skill:egm-<name>` skill command, but works identically in TUI,
+RPC, JSON, and print modes.
+
+| Command | Skill | Purpose |
+| --- | --- | --- |
+| `/egm-brainstorm` | `skills/egm-brainstorm` | Interactive ideation and refinement of a half-baked concept. |
+| `/egm-draft` | `skills/egm-draft` | Draft a design document section-by-section from a concepts brief. |
+| `/egm-review` | `skills/egm-review` | Run the five-stage Goldfish review protocol on a design document. |
+| `/egm-review-loop` | `skills/egm-review-loop` | Run the antagonistic review loop against a document standard. |
+| `/egm-resolve` | `skills/egm-resolve` | Resolve Goldfish findings into approved document edits. |
+| `/egm-drift-report` | `skills/egm-drift-report` | Detect drift between design documents and the code. |
+| `/egm-bootstrap` | `skills/egm-bootstrap` | Bootstrap EGM directory READMEs across a repository subtree. |
+
+Arguments pass through verbatim. For example, `/egm-review
+docs/designs/foo.md uninterrupted` runs the review pipeline on that document
+with the uninterrupted preset.
+
+## Tools
+
+| Tool | Role |
+| --- | --- |
+| `egm_ask` | Single-select interactive gate for EGM workflows (one question, 2-8 options). Falls back to plain chat when no interactive UI is available. |
+| `egm_goldfish` | Spawns zero-context Goldfish reviewers as read-only `pi --print` subprocesses, fans them out in parallel, and writes the consolidated report to the artifact directory. |
+| `egm_state` | Persists or returns the EGM review pipeline state for the current session branch (stored as durable session entries, so a long review survives compaction and branching). |
+
+The review pipeline itself is model-driven from the vendored skill text; the
+tools only provide the harness-specific mechanisms the skills describe.
+
+## Environment knobs
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `EGM_ARTIFACT_DIR` | working directory | Directory for briefs, drafts, and reports. Also settable via an `EGM artifact directory: <path>` line in `AGENTS.md`/`CLAUDE.md`. |
+| `EGM_GOLDFISH_TIMEOUT_MS` | `900000` | Timeout for each spawned Goldfish reviewer child. |
+| `EGM_GOLDFISH_MAX_CONCURRENT` | `3` | Maximum number of Goldfish children running at the same time. |
+
 ## Support status
 
-Experimental: this is Phase 1 of the port. Vendored content tracks upstream at
+Experimental: this is Phase 3 of the port. Vendored content tracks upstream at
 pinned revision `a8380ab` (see `UPSTREAM.md`). The extension-side review
-plumbing is functional, but upstream test suites and remaining harness
-integrations are still being ported; expect rough edges and report them.
+plumbing and the `/egm-*` commands are functional, but upstream test suites
+and remaining harness integrations are still being ported; expect rough edges
+and report them.

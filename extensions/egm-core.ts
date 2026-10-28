@@ -7,16 +7,21 @@
  *
  *   - `egm_ask`       single-select interactive gate (upstream `ask_question` role)
  *   - `egm_goldfish`  zero-context reviewer spawning (upstream subagent-tool role)
+ *   - `egm_state`     branch-aware pipeline state (durable custom entries)
+ *   - `/egm-*`        command aliases injecting vendored skill payloads
  *
- * Phase 2: both model-callable tools are live. Support modules live under
- * extensions/lib/ and are imported relatively; `extensions/*.ts` stays the only
- * top-level entry point.
+ * Phase 3: command UX and durable pipeline state are live; the review pipeline
+ * itself stays model-driven from the vendored SKILL.md prose. Support modules
+ * live under extensions/lib/ and are imported relatively; `extensions/*.ts`
+ * stays the only top-level entry point.
  */
 import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import { getSelectListTheme } from "@earendil-works/pi-coding-agent";
 import { SelectList, truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import { registerEgmCommands } from "./lib/commands.ts";
 import { registerGoldfishTool } from "./lib/goldfish.ts";
+import { registerStateTool } from "./lib/state.ts";
 
 export const EGM_VERSION = "0.1.0";
 
@@ -137,4 +142,6 @@ export default function egmCore(pi: ExtensionAPI) {
   });
 
   registerGoldfishTool(pi);
+  registerStateTool(pi);
+  registerEgmCommands(pi);
 }
