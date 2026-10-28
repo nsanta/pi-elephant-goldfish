@@ -24,7 +24,7 @@ assistants.
 
 ## Delegation
 
-A Goldfish runs in a fresh context with no conversation history. In Pi, do not spawn subagents yourself: call the `egm_goldfish` tool registered by this package, passing the persona shortname or persona path, the standard, the target, and the range. It launches zero-context `pi --print` subprocesses restricted to read-only tools and returns their findings. Present interactive gates with the `egm_ask` tool. If your harness has no `egm_goldfish` tool, run the scout steps inline.
+A Goldfish runs in a fresh context with no conversation history. In Pi, do not spawn subagents yourself: call the `egm_bootstrap` tool registered by this package with `path` (and `targetFilename` if non-default). It performs directory discovery, the safety gate, partitioning, worker spawning, JSON return validation, the root roll-up, and the mandatory final verification pass, and returns the verification report path and summary. If it returns an approval request, present it to the user with the `egm_ask` tool and only re-call `egm_bootstrap` with `approved: true` after explicit approval. If your harness has no `egm_bootstrap` tool, run the scout steps inline.
 
 ## Inputs
 

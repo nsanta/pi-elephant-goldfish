@@ -7,6 +7,7 @@
  *
  *   - `egm_ask`       single-select interactive gate (upstream `ask_question` role)
  *   - `egm_goldfish`  zero-context reviewer spawning (upstream subagent-tool role)
+ *   - `egm_bootstrap` recursive EGM README generation (upstream bootstrap orchestrator)
  *   - `egm_state`     branch-aware pipeline state (durable custom entries)
  *   - `/egm-*`        command aliases injecting vendored skill payloads
  *
@@ -19,6 +20,7 @@ import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import { getSelectListTheme } from "@earendil-works/pi-coding-agent";
 import { SelectList, truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import { registerBootstrapTool } from "./lib/bootstrap.ts";
 import { registerEgmCommands } from "./lib/commands.ts";
 import { registerGoldfishTool } from "./lib/goldfish.ts";
 import { registerStateTool } from "./lib/state.ts";
@@ -141,6 +143,7 @@ export default function egmCore(pi: ExtensionAPI) {
     },
   });
 
+  registerBootstrapTool(pi);
   registerGoldfishTool(pi);
   registerStateTool(pi);
   registerEgmCommands(pi);

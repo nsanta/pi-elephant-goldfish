@@ -10,7 +10,8 @@ standards are vendored content, while the harness-specific behavior lives in a
 Pi extension (`extensions/`) that registers three tools and a set of `/egm-*`
 commands on session start. Instead of your harness's native subagent and
 question tools, Pi sessions drive EGM through these extension-registered tools:
-`egm_goldfish` (zero-context reviewer spawning), `egm_ask` (single-select
+`egm_goldfish` (zero-context reviewer spawning), `egm_bootstrap` (recursive
+directory documentation), `egm_ask` (single-select
 interactive gates), and `egm_state` (durable pipeline state); the `/egm-*`
 commands start each vendored skill by name (see [Commands](#commands)). The
 vendored skill
@@ -38,6 +39,7 @@ pi -e .
 | Antigravity `invoke_subagent` | `egm_goldfish` tool |
 | Claude Code `Agent` tool | `egm_goldfish` tool |
 | Codex `spawn_agent` | `egm_goldfish` tool |
+| Bootstrap recursive sub-orchestrator workers | `egm_bootstrap` tool |
 | `ask_question` gate | `egm_ask` tool |
 | Named personas (harness-registered subagent types) | Persona-file loading inside zero-context `pi --print` children |
 | Synthesizer nesting (subagents spawning subagents) | Extension-side fan-out/fan-in |
@@ -84,6 +86,7 @@ with the uninterrupted preset.
 | --- | --- |
 | `egm_ask` | Single-select interactive gate for EGM workflows (one question, 2-8 options). Falls back to plain chat when no interactive UI is available. |
 | `egm_goldfish` | Spawns zero-context Goldfish reviewers as read-only `pi --print` subprocesses, fans them out in parallel, and writes the consolidated report to the artifact directory. |
+| `egm_bootstrap` | Recursively bootstraps EGM contract `README.md` files: discovery, safety gate, pruning, partitioning, parallel read-and-write worker subprocesses, JSON return validation, root roll-up, and a mandatory final verification pass. See [Bootstrap](#bootstrap). |
 | `egm_state` | Persists or returns the EGM review pipeline state for the current session branch (stored as durable session entries, so a long review survives compaction and branching). |
 
 The review pipeline itself is model-driven from the vendored skill text; the
@@ -96,10 +99,36 @@ tools only provide the harness-specific mechanisms the skills describe.
 | `EGM_ARTIFACT_DIR` | working directory | Directory for briefs, drafts, and reports. Also settable via an `EGM artifact directory: <path>` line in `AGENTS.md`/`CLAUDE.md`. |
 | `EGM_GOLDFISH_TIMEOUT_MS` | `900000` | Timeout for each spawned Goldfish reviewer child. |
 | `EGM_GOLDFISH_MAX_CONCURRENT` | `3` | Maximum number of Goldfish children running at the same time. |
+| `EGM_BOOTSTRAP_TIMEOUT_MS` | `900000` | Timeout for each spawned `egm_bootstrap` worker child. |
+| `EGM_BOOTSTRAP_MAX_CONCURRENT` | `3` | Maximum number of bootstrap worker children running at the same time. |
+
+## Bootstrap
+
+`egm_bootstrap` ports the upstream `egm-bootstrap` root orchestrator. Call it
+with `path` (the subtree to document, required) and optionally
+`targetFilename` (default `README.md`). The extension performs,
+deterministically: level-by-level BFS discovery (hidden/ignored directories
+skipped, `.gitignore`/`.egmignore` basenames honored), bottom-up pruning of
+non-code and test-only directories, adaptive partitioning, and a final
+verification pass. Documentation itself is written by fresh `pi --print`
+workers restricted to `read,grep,find,ls,write,edit` tools; each worker must
+end with a JSON `subtree_index` payload (one retry on invalid output, then
+placeholder entries), and a final root-compiler child rolls everything up into
+the root blueprint.
+
+Safety gate: when more than 15 directories survive pruning and `approved` is
+not `true`, the tool returns an approval request instead of running. Present
+it to the user with `egm_ask`, and only re-call `egm_bootstrap` with
+`approved: true` after explicit approval.
+
+The result reports the number of contract files written/corrected, the
+verification violation count, and the report path
+(`<artifact dir>/bootstrap_report.md`); read the report file for per-worker
+status and every violation.
 
 ## Support status
 
-Experimental: this is Phase 3 of the port. Vendored content tracks upstream at
+Experimental: this is Phase 4 of the port. Vendored content tracks upstream at
 pinned revision `a8380ab` (see `UPSTREAM.md`). The extension-side review
 plumbing and the `/egm-*` commands are functional, but upstream test suites
 and remaining harness integrations are still being ported; expect rough edges
