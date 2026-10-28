@@ -128,8 +128,45 @@ status and every violation.
 
 ## Support status
 
-Experimental: this is Phase 4 of the port. Vendored content tracks upstream at
-pinned revision `a8380ab` (see `UPSTREAM.md`). The extension-side review
-plumbing and the `/egm-*` commands are functional, but upstream test suites
-and remaining harness integrations are still being ported; expect rough edges
-and report them.
+Experimental but exercised: vendored content tracks upstream at pinned
+revision `a8380ab` (see `UPSTREAM.md`), and the extension-side runtime
+(`egm_goldfish`, `egm_bootstrap`, `egm_ask`, `egm_state`, the `/egm-*`
+commands) has been verified end-to-end against a real pi dev install.
+
+What is verified (see [Testing](#testing) for the record and how to re-run):
+
+- Unit and content checks port the upstream suite's intent and thresholds
+  (frontmatter schema, the 24,000-byte skill body limit, persona/standard
+  coverage, link integrity, manifest, adaptation invariants, `adapt-pi.mjs`
+  sync fidelity over a pristine upstream tree).
+- A headless, uninterrupted Goldfish review end-to-end: `/egm-review` on a
+  fixture ran all five stages through 9 zero-context reviewer children and
+  produced a consolidated report whose verdict caught every planted flaw.
+- A bootstrap end-to-end: `egm_bootstrap` on a 6-directory fixture wrote all
+  contract files through parallel workers with 0 verification violations, and
+  the >15-directory safety gate fired without spawning workers.
+
+What is verified manually only: interactive multi-turn flows (brainstorm
+intake, draft section-by-section, review gates answered in the TUI). Follow
+the per-skill checklists in `skills/*/TEST.md` for those.
+
+## Testing
+
+Run `npm test` (fast, offline; integration tests are env-gated behind
+`EGM_E2E`) and `npm run check:content`. Exact commands, the env-gated
+tier, and the recorded phase-by-phase harness verification evidence live in
+[TESTING.md](../TESTING.md).
+
+## Known limits
+
+- **TUI gates in RPC are forwarded minimally.** `egm_ask` renders a native
+  SelectList dialog in the TUI; in RPC/print mode the gate degrades to a
+  plain-chat question instead of a structured dialog.
+- **No artifact side-panel.** Reports, briefs, and drafts land in the artifact
+  directory as files; there is no pi-side UI surface listing them.
+- **Named personas are emulated.** Upstream harnesses register personas as
+  native subagent types; on Pi, a persona is a vendored markdown file that
+  each zero-context `pi --print` child reads before judging.
+- **npm publish pending.** Distribution today is the git repository (dev
+  install via `pi -e .`, later `pi install git:...`); a published npm package
+  is deferred to the release phase.

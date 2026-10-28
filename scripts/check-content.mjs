@@ -156,13 +156,6 @@ const LINK_RE = /\[([^\]]+)\]\(([^)]+)\)/g;
 // Each entry is a deliberate, temporary exception — remove it when its reason
 // no longer holds.
 const ALLOWED_MISSING_TARGETS = new Set([
-  // WHY: referenced by the 7 vendored skills/*/TEST.md files, which point at
-  // upstream's root test-suite documentation. This port has not yet ported the
-  // upstream test suite (PLAN.md schedules that for Phase 5), so no TESTING.md
-  // exists at the repository root.
-  // REMOVE WHEN: Phase 5 adds this repository's own TESTING.md; the vendored
-  // links then resolve on their own and this exception must not linger.
-  "TESTING.md",
   // WHY: resources/README.md links the upstream documentation index. This port
   // intentionally ships docs/pi.md only (see UPSTREAM.md), so docs/index.md has
   // no equivalent here.

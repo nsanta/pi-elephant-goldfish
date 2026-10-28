@@ -9,6 +9,15 @@
     "url": "git+https://github.com/undefined/pi-elephant-goldfish.git"
   },
   "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "check:content": "node scripts/check-content.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
   "pi": {
     "extensions": ["extensions/*.ts"],
     "skills": ["skills/*"],
