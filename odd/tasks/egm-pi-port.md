@@ -43,10 +43,15 @@
 - **Review disposition (standing, user decision):** intermediate phase candidates (Phases 3-5) are explicitly LEFT UNREVIEWED by the user (choice recorded after 2 declines + 2 expired consent prompts); only the Phase 6 release candidate gets the review offer. ASSESS unknown-outcome path honored via independent verifier
 - **Evidence:** writer task (timed out post-fixture; artifacts + code recovered and parent-verified) + independent gentle-ai-verify 6/6; commit `079545f`
 
-### Phase 4 — Bootstrap swarm & drift wiring
-- [ ] BFS discovery, pruning, >15-dir gate, adaptive partitioning, parallel workers, schema validation, roll-up, final verification pass
-- [ ] Acceptance: 6-dir fixture OK; gate fires on 16-dir
-- **Evidence:** (pending)
+### Phase 4 — Bootstrap swarm & drift wiring (done)
+- [x] `egm_bootstrap` tool: discovery (level-BFS + documented .gitignore subset), pruning, adaptive partitioning, >15-dir gate (returns approval request; model mediates via egm_ask), parallel read-write workers (inline scout steps per upstream fallback), JSON validation + retry + placeholders, deterministic intermediate blueprints, root-compiler child, mandatory verification pass, bootstrap_report.md
+- [x] worker-run.ts: read-write child runner (`--tools read,grep,find,ls,write,edit`), kill/abort parity with goldfish.ts
+- [x] Skill re-adaptation: bootstrap delegation now points at egm_bootstrap; sync idempotence proven (all 7 dirs == adapt-pi(upstream))
+- [x] Acceptance: full pipeline on 6-dir fixture — 10 contract files, 4/4 workers ok, root ok, 0 verification violations, `npm test` detected; gate fired on 16-dir tree (no workers spawned); correction policy preserved KEEP-ME-NOTES (writer run #1); pure functions unit-tested (2 real bugs caught)
+- [x] Verification: independent verifier 5/6 PASS + 1 dispositioned (my instruction wording error re: "byte-identical" — idempotence proof shows zero drift)
+- [x] Drift report: no runtime needed (in-thread skill) — confirmed adapted and discoverable
+- **Review disposition:** standing user decision — intermediates unreviewed
+- **Evidence:** writer task + independent gentle-ai-verify + parent-run full pipeline (2 runs); commit `bbb2b7e`
 
 ### Phase 5 — Tests, docs, harness record
 - [ ] vitest unit + integration; ports of upstream checks
