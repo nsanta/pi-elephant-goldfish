@@ -34,10 +34,14 @@
 - **Review disposition:** native review consent DECLINED by the user for this candidate (5 files, 851 lines, high risk: process spawning); candidate-scoped
 - **Evidence:** delegated to gentle-ai-worker + independent gentle-ai-verify; commit `490468a`
 
-### Phase 3 — Orchestration layer
-- [ ] /egm-* commands; review presets; semantic split; 5-stage pipeline; checkpoint gates; 1-audit cap; pause/resume (appendEntry)
-- [ ] Acceptance: headless end-to-end /egm-review produces 5 reports + consolidated report
-- **Evidence:** (pending)
+### Phase 3 — Orchestration layer (done)
+- [x] Seven `/egm-*` commands: load vendored SKILL.md (frontmatter stripped), start a user turn with body + args; identical in all modes; verified handled + model executes skill intake
+- [x] `egm_state` tool: branch-aware pipeline state via appendEntry custom entries (compaction/branch safe); roundtrip verified
+- [x] Fixture `sample-design-full.md`: exact `## Detailed Implementation Plan` at line 88 (split 1-87/88-137), four planted flaw classes verified present
+- [x] Acceptance: headless `/egm-review <fixture> uninterrupted` ran all five stages via 9 goldfish children, 0 failures, 78 raw findings → consolidated report with stage tally table + verdict catching every planted flaw class
+- [x] Verification: independent verifier 6/6 PASS (pure-function tests for frontmatter/payload, host-type conformance of appendEntry/getBranch, live smokes, docs, type check with only the known host-import error class)
+- **Review disposition (standing, user decision):** intermediate phase candidates (Phases 3-5) are explicitly LEFT UNREVIEWED by the user (choice recorded after 2 declines + 2 expired consent prompts); only the Phase 6 release candidate gets the review offer. ASSESS unknown-outcome path honored via independent verifier
+- **Evidence:** writer task (timed out post-fixture; artifacts + code recovered and parent-verified) + independent gentle-ai-verify 6/6; commit `079545f`
 
 ### Phase 4 — Bootstrap swarm & drift wiring
 - [ ] BFS discovery, pruning, >15-dir gate, adaptive partitioning, parallel workers, schema validation, roll-up, final verification pass
