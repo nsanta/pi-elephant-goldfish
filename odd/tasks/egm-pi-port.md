@@ -53,11 +53,15 @@
 - **Review disposition:** standing user decision — intermediates unreviewed
 - **Evidence:** writer task + independent gentle-ai-verify + parent-run full pipeline (2 runs); commit `bbb2b7e`
 
-### Phase 5 — Tests, docs, harness record
-- [ ] vitest unit + integration; ports of upstream checks
-- [ ] docs/ install, delegation mapping, limits
-- [ ] Acceptance: brainstorm→draft→review end-to-end via package install
-- **Evidence:** (pending)
+### Phase 5 — Tests, docs, harness record (done)
+- [x] vitest suite: 74 unit tests (frontmatter, 24KB skill-load cap mirrored from upstream, scenario coverage, adaptation invariants, real-script sync fidelity, extension-lib pure functions, manifest hygiene); integration suite EGM_E2E-gated
+- [x] Integration live-fired by parent: 3/3 PASS (RPC smokes + real zoom_out reviewer); fixed assistant-text capture (message_end, not start/update) + waitFor mode in RPC helper
+- [x] vitest.config.ts host-alias discovery (pi binary → realpath → node_modules walk-up); devDeps vitest+typescript only, host packages excluded
+- [x] TESTING.md: playbook + harness record (phases 0-4 evidence with dates/commits); allowlist entry removed from check-content (links now resolve)
+- [x] docs/pi.md finalized: support status, testing section, known limits
+- [x] Upstream-bar status: review end-to-end verified headless (Phase 3/4 evidence); brainstorm/draft workflow-start verified via RPC; full interactive multi-turn flows remain manual per TESTING.md
+- **Review disposition:** standing user decision — intermediates unreviewed
+- **Evidence:** writer task (74/74 unit) + parent live integration run + one test fix; commit `292b893`
 
 ### Phase 6 — Release & upstream contribution
 - [ ] tag/publish; README; upstream PR material (user decides submission)
