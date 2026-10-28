@@ -21,7 +21,9 @@
 - [x] docs/pi.md harness guide (install, delegation mapping, artifact dir, support status)
 - [x] checks: scripts/check-content.mjs — frontmatter 16/16 pass, link integrity 32 files with documented 2-entry allowlist (TESTING.md → Phase 5, docs/index.md → no equivalent)
 - [x] Acceptance: sync exit 0; checks exit 0; package loads via `pi -e .`; extension command `/egm-version` RPC disposition=handled; skills registered `/skill:egm-*` (hidden from model auto-invocation by upstream `disable-model-invocation: true`)
-- **Evidence:** delegated to gentle-ai-worker (task mvs2oleu-1-ngbr) + parent verification; commit recorded below
+- **Evidence:** delegated to gentle-ai-worker (task mvs2oleu-1-ngbr) + parent verification; commit `8f8cc23`
+- **Verification:** independent verifier (gentle-ai-verify) PASS 6/6 — vendor fidelity (agents/resources byte-identical; skill diffs exclusively the 4 sanctioned classes; deterministic regeneration from pristine upstream), adaptation-script negative control (fails on corrupted anchor), checker negative controls (unlisted target fails; allowlist works), package integration (RPC handled, clean startup), content sanity, clean git state
+- **Review disposition:** native review consent DECLINED by the user for this candidate (57 files, 3849 lines, medium risk); candidate-scoped per RDD; ASSESS fallback plan executed (writer self-verification + independent verifier PASS)
 
 ### Phase 2 — Core extension runtime
 - [ ] egm_ask single-select gate tool (ctx.ui.custom, invariants, non-UI fallback)
