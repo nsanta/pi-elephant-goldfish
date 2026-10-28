@@ -25,12 +25,14 @@
 - **Verification:** independent verifier (gentle-ai-verify) PASS 6/6 — vendor fidelity (agents/resources byte-identical; skill diffs exclusively the 4 sanctioned classes; deterministic regeneration from pristine upstream), adaptation-script negative control (fails on corrupted anchor), checker negative controls (unlisted target fails; allowlist works), package integration (RPC handled, clean startup), content sanity, clean git state
 - **Review disposition:** native review consent DECLINED by the user for this candidate (57 files, 3849 lines, medium risk); candidate-scoped per RDD; ASSESS fallback plan executed (writer self-verification + independent verifier PASS)
 
-### Phase 2 — Core extension runtime
-- [ ] egm_ask single-select gate tool (ctx.ui.custom, invariants, non-UI fallback)
-- [ ] egm_goldfish spawn tool (headless pool, timeouts, abort, report write)
-- [ ] config: artifact dir, model/timeouts
-- [ ] Acceptance: fixture spawns one real reviewer on a sample doc
-- **Evidence:** (pending)
+### Phase 2 — Core extension runtime (done)
+- [x] egm_ask single-select gate tool (pi-tui SelectList, 1-9 keys, Esc cancel; plain-chat fallback verified in print mode)
+- [x] egm_goldfish spawn tool (bounded-concurrency pool, `--no-session --tools read,grep,find,ls` children, SIGTERM→SIGKILL timeout escalation, abort wiring, deterministic severity tally, artifact-first report via withFileMutationQueue, instructive synthesizer/bootstrap rejections)
+- [x] config: EGM_ARTIFACT_DIR env → AGENTS.md/CLAUDE.md `EGM artifact directory:` marker → working dir; EGM_GOLDFISH_TIMEOUT_MS (900s) / EGM_GOLDFISH_MAX_CONCURRENT (3), clamped
+- [x] Acceptance: real zoom_out reviewer spawned on fixture caught all 4 planted flaws (1-2 Blocker, Major, Nit tallies); collision naming (-2 suffix); artifact dir env + AGENTS.md marker verified; all-failed path verified by code read
+- [x] Verification: independent verifier 6/7 PASS + 1 dispositioned (single-reviewer all-timeout writes no report — matches approved spec "all failed → throw"; my test instruction contradicted the spec, not the code). ASSESS risk high (process boundary) honored via independent verifier
+- **Review disposition:** native review consent DECLINED by the user for this candidate (5 files, 851 lines, high risk: process spawning); candidate-scoped
+- **Evidence:** delegated to gentle-ai-worker + independent gentle-ai-verify; commit `490468a`
 
 ### Phase 3 — Orchestration layer
 - [ ] /egm-* commands; review presets; semantic split; 5-stage pipeline; checkpoint gates; 1-audit cap; pause/resume (appendEntry)
