@@ -48,10 +48,10 @@ and the session is notified of the path, then yields the turn.
 Requirements: Pi >= 1.4.0 (tested against 1.4.0). Reviews spawn zero-context `pi --print`
 children, so the `pi` binary must be on `PATH`.
 
-**Option A — from a published git repository** (placeholder: `TBD-OWNER` pending repo publish):
+**Option A — from a published git repository** (placeholder: `nsanta` pending repo publish):
 
 ```sh
-pi install git:github.com/TBD-OWNER/pi-elephant-goldfish
+pi install git:github.com/nsanta/pi-elephant-goldfish
 ```
 
 **Option B — development, from a clone of this repository:**

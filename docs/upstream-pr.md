@@ -78,7 +78,7 @@ can follow later if upstream wants a first-class pi harness.
 ### `docs/harnesses.md` — Install table row
 
 ```markdown
-| Pi | `pi install git:github.com/<owner>/pi-elephant-goldfish` (community package; see below) |
+| Pi | `pi install git:github.com/nsanta/pi-elephant-goldfish` (community package; see below) |
 ```
 
 ### `docs/harnesses.md` — Delegation table row
@@ -91,14 +91,14 @@ can follow later if upstream wants a first-class pi harness.
 
 ```markdown
 **Pi** has a community package,
-[pi-elephant-goldfish](https://github.com/<owner>/pi-elephant-goldfish), which vendors this
+[pi-elephant-goldfish](https://github.com/nsanta/pi-elephant-goldfish), which vendors this
 repository's content at a pinned revision and adds a pi extension (`egm_ask`, `egm_goldfish`,
 `egm_bootstrap`, `egm_state`, and `/egm-*` commands). Install with
-`pi install git:github.com/<owner>/pi-elephant-goldfish` (Pi >= 1.4.0). Skills are invoked as
+`pi install git:github.com/nsanta/pi-elephant-goldfish` (Pi >= 1.4.0). Skills are invoked as
 `/egm-<command>` (the extension registers one command per skill, so the same commands work in
 TUI, RPC, JSON, and print modes). Verification evidence — including an end-to-end headless
 review and a bootstrap run — is recorded in that repository's
-[TESTING.md](https://github.com/<owner>/pi-elephant-goldfish/blob/main/TESTING.md). End-to-end
+[TESTING.md](https://github.com/nsanta/pi-elephant-goldfish/blob/main/TESTING.md). End-to-end
 workflow fixtures are not yet automated for Pi.
 ```
 
@@ -122,4 +122,4 @@ brainstorm → draft → review through plugin install. This repo's evidence:
 - [ ] Create a branch (e.g. `docs/pi-community-package`). *(pending owner decision)*
 - [ ] Fill in the owner's PR template. *(pending owner decision)*
 - [ ] Attach execution transcripts proving brainstorm → draft → review through `pi install git:...` (record during this repo's release phase). *(pending owner decision)*
-- [ ] Replace every `<owner>` placeholder above with the published repository owner. *(pending owner decision)*
+- [ ] Replace every `nsanta` placeholder above with the published repository owner. *(pending owner decision)*

@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TBD-OWNER/pi-elephant-goldfish.git"
+    "url": "git+https://github.com/nsanta/pi-elephant-goldfish.git"
   },
   "type": "module",
   "scripts": {
