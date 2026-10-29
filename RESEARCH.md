@@ -145,8 +145,8 @@ sequenceDiagram
     P->>C: before_agent_start (systemPromptOptions)
     C->>T: read always-on files (cap 24 K)
     C->>C: compose sections:<br/>egm_workflow + h2_harness + memory_protocol
-    C-->>P: sections.{egm_workflow,h2_harness,memory_protocol} = text
-    Note over P: pi appends the structured delta<br/>(prompt-customizer pattern; NOT forceSystemPrompt)
+    C-->>P: sections = egm_workflow / h2_harness / memory_protocol
+    Note over P: pi appends the structured delta<br/>(prompt-customizer pattern, NOT forceSystemPrompt)
     P->>M: request with composed prompt
     M->>M: follows EGM lifecycle + memory protocol<br/>+ adopted harness guidance
     M->>P: tool calls (egm_*, h2_run, mem_*)
@@ -176,10 +176,10 @@ sequenceDiagram
     H->>M: recurring task shape detected
     M->>E: mem_search("harness2 <slug>")
     E-->>M: prior lessons (cross-project!)
-    M->>H2: h2_run({... experience: lessons}) [seam now wired]
+    M->>H2: h2_run with experience = lessons [seam now wired]
     H2->>L: reflect() → lessons.md
     M->>E: mem_save(harness2/<slug>, distilled lessons)
-    Note over L,E: Library stays file-of-record;<br/>Engram is the searchable index
+    Note over L,E: Library stays file-of-record — Engram is the searchable index
 ```
 
 Bridge rule (respecting h2's OKF trust tiers): Engram observations created from h2 lessons carry `verified` only when the run's best verdict is `pass ≥ 0.8` — same rule as `emitLesson`/`lessonVerdict`.
@@ -191,11 +191,11 @@ Bridge rule (respecting h2's OKF trust tiers): Engram observations created from 
 ```mermaid
 stateDiagram-v2
     [*] --> Idea
-    Idea --> Design: /egm-brainstorm → /egm-draft<br/>(memory_protocol: recall prior decisions)
+    Idea --> Design: /egm-brainstorm then /egm-draft<br/>(recall prior decisions via memory protocol)
     Design --> SpecReview: /egm-review (zero-context Goldfish)
     SpecReview --> Optimized: recurring shape detected
     SpecReview --> Implement: one-off task
-    Optimized --> HarnessLoop: h2:run (experience = Engram lessons)
+    Optimized --> HarnessLoop: h2 run (experience = Engram lessons)
     HarnessLoop --> Adopt: compose + human /h2:adopt
     Adopt --> SpecReview: harness tree now in system prompt<br/>(Composer injects adopted always-on)
     Implement --> Build: normal ODD/build flow
