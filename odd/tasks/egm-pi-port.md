@@ -63,6 +63,11 @@
 - **Review disposition:** standing user decision — intermediates unreviewed
 - **Evidence:** writer task (74/74 unit) + parent live integration run + one test fix; commit `292b893`
 
-### Phase 6 — Release & upstream contribution
-- [ ] tag/publish; README; upstream PR material (user decides submission)
-- **Evidence:** (pending)
+### Phase 6 — Release & upstream contribution (in progress — release actions pending user)
+- [x] README.md (features/install/quickstart/config/dev; install URL marked TBD-OWNER)
+- [x] docs/upstream-pr.md — contribution options A/B per upstream policy, ready-to-paste artifacts, submission checklist (submission is user's call)
+- [x] Install-path smoke: `pi install -l ./` → `/egm-version` handled via installed declaration (with one-run `--approve`; project trust is interactive TUI, user-granted)
+- [x] check-content scans README.md now; 74 unit + content checks green
+- [ ] Release candidate review offer (this is the one candidate the user pre-approved offering)
+- [ ] User decisions pending: GitHub owner (package.json repository URL), tag/push, npm publish (y/n), upstream PR submission (y/n)
+- **Evidence:** commit `3904a10`; writer task + parent verification
