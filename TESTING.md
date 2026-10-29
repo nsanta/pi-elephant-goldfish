@@ -106,3 +106,9 @@ findings over fixture documents. The TUI dialog path is type-checked against
 the host API, and the SelectList component used by `egm_ask` is pi's own
 `@earendil-works/pi-tui` SelectList (same component pi's TUI renders), so
 rendering parity is inherited from the host rather than re-tested here.
+
+## Release record
+
+- 2026-10-29 — v0.1.0 released: master fast-forwarded from feature/egm-pi-port (17+2 commits), tagged `v0.1.0`, pushed to https://github.com/nsanta/pi-elephant-goldfish (public).
+- Git-install smoke (published path): `pi install --approve -l git:github.com/nsanta/pi-elephant-goldfish@v0.1.0` → installed; bare `pi --approve --mode rpc` `/egm-version` → notify `pi-elephant-goldfish 0.1.0` + disposition `handled`. Install removed after validation.
+- Deferred: npm publish (registry not authenticated); upstream PR submission (draft in docs/upstream-pr.md).
