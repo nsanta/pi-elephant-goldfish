@@ -63,13 +63,11 @@
 - **Review disposition:** standing user decision — intermediates unreviewed
 - **Evidence:** writer task (74/74 unit) + parent live integration run + one test fix; commit `292b893`
 
-### Phase 6 — Release & upstream contribution (done — release actions handed to user)
-- [x] README.md (features/install/quickstart/config/dev; install URL marked TBD-OWNER)
-- [x] docs/upstream-pr.md — contribution options A/B per upstream policy, ready-to-paste artifacts, submission checklist (submission is user's call)
-- [x] Install-path smoke: `pi install -l ./` → `/egm-version` handled via installed declaration (with one-run `--approve`; project trust is interactive TUI, user-granted)
-- [x] check-content scans README.md now; 74 unit + content checks green
-- [x] LICENSE: canonical Apache-2.0 text fetched from apache.org and integrity-verified
-- [x] Release QA (independent verifier): 7/7 PASS, no release-blocking failures — sync idempotence over pristine upstream, secrets/placeholder scan, shell + process-boundary review, branch completeness (17 commits), regressions
-- [x] Release candidate review offer made; user DECLINED via host UI (109 files, 11,933 lines, high risk) — candidate-scoped; ASSESS high-risk path honored via release QA verifier
-- [ ] **User actions pending:** set GitHub owner (package.json + README TBD-OWNER), create/push remote, tag v0.1.0, npm publish (optional), upstream PR submission (optional, draft ready in docs/upstream-pr.md)
-- **Evidence:** commits `3904a10`, `46148d5`, `6d96560`, `e6e7936`; writer tasks + release QA verifier
+### Phase 6 — Release & upstream contribution (DONE — released v0.1.0)
+- [x] README.md, docs/upstream-pr.md, LICENSE, install-path smoke, check-content widened (see prior entries)
+- [x] Release candidate review offer made; user DECLINED via host UI — candidate-scoped; ASSESS high-risk path honored via release QA verifier (7/7 PASS)
+- [x] Owner set to nsanta everywhere (package.json, README, upstream-pr draft)
+- [x] master fast-forwarded from feature branch; tagged `v0.1.0`; pushed to https://github.com/nsanta/pi-elephant-goldfish (public) with feature branch + tag
+- [x] Git-install smoke on published tag: install → bare-pi RPC `/egm-version` handled → removed after validation (recorded in TESTING.md)
+- [ ] Deferred to user: npm publish (registry not authenticated), upstream PR submission (draft ready)
+- **Evidence:** commits `46148d5`…`31827b1` on master; tag `v0.1.0`
