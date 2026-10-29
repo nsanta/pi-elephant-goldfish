@@ -29,7 +29,7 @@ import { join, resolve, dirname, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SCAN_DIRS = ["skills", "agents", "resources", "docs"];
+const SCAN_DIRS = ["skills", "agents", "resources", "docs", "README.md"];
 
 let failures = 0;
 let warnings = 0;
@@ -168,7 +168,13 @@ function checkLinks() {
   const files = [];
   for (const dir of SCAN_DIRS) {
     const full = join(ROOT, dir);
-    if (existsSync(full)) files.push(...walkMarkdown(full));
+    if (!existsSync(full)) continue;
+    if (statSync(full).isFile()) {
+      // A direct file entry (e.g. "README.md") — scan it as-is.
+      if (full.endsWith(".md")) files.push(full);
+    } else {
+      files.push(...walkMarkdown(full));
+    }
   }
 
   let linksChecked = 0;
