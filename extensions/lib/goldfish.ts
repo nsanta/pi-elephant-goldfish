@@ -17,7 +17,8 @@ import { Type } from "typebox";
 import {
   getGoldfishMaxConcurrent,
   getGoldfishTimeoutMs,
-  resolveArtifactDir,
+  nextAvailableReportPath,
+  resolveArtifactPath,
 } from "./artifact-dir.ts";
 import { resolvePersona, resolveStandard, type ResolvedResource } from "./paths.ts";
 
@@ -71,7 +72,13 @@ const GoldfishParams = Type.Object({
   outputFileName: Type.Optional(
     Type.String({
       description:
-        "Report filename inside the artifact directory (a number is appended if the file already exists).",
+        "Report file name (a number is appended if the file already exists). Placed per the configured artifact layout: structured (default) puts it in <artifact-dir>/egm/<slug>/, flat puts it in <artifact-dir>/.",
+    }),
+  ),
+  slug: Type.Optional(
+    Type.String({
+      description:
+      "Feature slug for the structured artifact layout (kebab-cased; e.g. the design's short name). Structured mode (the default) writes the report to <artifact-dir>/egm/<slug>/; ignored in flat mode.",
     }),
   ),
 });
@@ -267,19 +274,6 @@ function tallySeverities(text: string): { blocker: number; major: number; nit: n
   return tally;
 }
 
-/** Pick `<base>.md`, then `<base>-2.md`, `-3.md`, ... inside `dir`. */
-function nextAvailableReportPath(dir: string, fileName: string): string {
-  const ext = ".md";
-  const base = fileName.toLowerCase().endsWith(ext) ? fileName.slice(0, -ext.length) : fileName;
-  let candidate = path.join(dir, `${base}${ext}`);
-  let counter = 2;
-  while (existsSync(candidate)) {
-    candidate = path.join(dir, `${base}-${counter}${ext}`);
-    counter += 1;
-  }
-  return candidate;
-}
-
 function buildReport(options: {
   targetFile: string;
   range?: string;
@@ -337,7 +331,7 @@ export function registerGoldfishTool(pi: ExtensionAPI): void {
     name: "egm_goldfish",
     label: "EGM Goldfish",
     description:
-      "Spawn zero-context Goldfish reviewer subprocesses (fresh `pi --print` processes restricted to read tools) over a target document range. Fans reviewers out in parallel, writes a consolidated findings report file, and returns the report path plus a summary. Never returns full report content (artifact-first): read the report file for details.",
+      "Spawn zero-context Goldfish reviewer subprocesses (fresh `pi --print` processes restricted to read tools) over a target document range. Fans reviewers out in parallel, writes a consolidated findings report file (per the configured artifact layout; pass `slug` to file it under <artifact-dir>/egm/<slug>/), and returns the report path plus a summary. Never returns full report content (artifact-first): read the report file for details.",
     parameters: GoldfishParams,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const workspaceRoot = ctx.cwd;
@@ -429,8 +423,7 @@ export function registerGoldfishTool(pi: ExtensionAPI): void {
         return tally;
       });
 
-      // Report filename and artifact directory.
-      const artifactDir = resolveArtifactDir(workspaceRoot);
+      // Report filename and artifact path (layout-aware).
       const fallbackBase =
         planned.length === 1
           ? `${planned[0].reviewer.canonicalName}_report`
@@ -438,11 +431,16 @@ export function registerGoldfishTool(pi: ExtensionAPI): void {
       const requestedName = params.outputFileName
         ? path.basename(params.outputFileName)
         : fallbackBase;
+      const targetPath = resolveArtifactPath(workspaceRoot, {
+        name: requestedName,
+        slug: params.slug,
+        kind: "feature",
+      });
 
       const reportPath = await withFileMutationQueue(
-        path.join(artifactDir, requestedName),
+        targetPath,
         async () => {
-          const unique = nextAvailableReportPath(artifactDir, requestedName);
+          const unique = nextAvailableReportPath(path.dirname(targetPath), path.basename(targetPath));
           await writeFile(
             unique,
             buildReport({

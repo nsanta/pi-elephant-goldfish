@@ -120,6 +120,24 @@ export interface ArtifactPathOptions {
 }
 
 /**
+ * Pick `<base>.md`, then `<base>-2.md`, `-3.md`, ... inside `dir`, so parallel
+ * or repeated runs never overwrite an existing report. The requested file
+ * name's extension is normalized to lowercase `.md` (a missing extension is
+ * treated as `.md`); existence checks are exact.
+ */
+export function nextAvailableReportPath(dir: string, fileName: string): string {
+  const ext = ".md";
+  const base = fileName.toLowerCase().endsWith(ext) ? fileName.slice(0, -ext.length) : fileName;
+  let candidate = path.join(dir, `${base}${ext}`);
+  let counter = 2;
+  while (existsSync(candidate)) {
+    candidate = path.join(dir, `${base}-${counter}${ext}`);
+    counter += 1;
+  }
+  return candidate;
+}
+
+/**
  * Resolve (and create, if missing) the full artifact file path for one
  * artifact. Structured layout: `<artifact-dir>/egm/<slug>/<name>` (or
  * `<artifact-dir>/egm/bootstrap/<name>`). Flat layout: legacy

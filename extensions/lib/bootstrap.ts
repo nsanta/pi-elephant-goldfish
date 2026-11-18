@@ -17,7 +17,7 @@ import path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { PACKAGE_ROOT } from "./paths.ts";
-import { resolveArtifactDir } from "./artifact-dir.ts";
+import { resolveArtifactPath } from "./artifact-dir.ts";
 import {
   PI_UNAVAILABLE_GUIDANCE,
   findPiBinary,
@@ -845,8 +845,12 @@ export function registerBootstrapTool(pi: ExtensionAPI): void {
       );
 
       // Artifact report (artifact-first: result carries path + summary only).
-      const artifactDir = resolveArtifactDir(workspaceRoot);
-      const reportPath = path.join(artifactDir, "bootstrap_report.md");
+      // Structured layout files it under <artifact-dir>/egm/bootstrap/; flat
+      // mode keeps the legacy <artifact-dir>/bootstrap_report.md.
+      const reportPath = resolveArtifactPath(workspaceRoot, {
+        name: "bootstrap_report.md",
+        kind: "bootstrap",
+      });
       const failedWorkers = outcomes.filter((o) => o.status === "failed");
       const reportLines: string[] = [];
       reportLines.push("# EGM Bootstrap Report");

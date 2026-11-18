@@ -28,6 +28,7 @@ import {
 } from "../../extensions/lib/ask-options.ts";
 import { PACKAGE_ROOT, resolvePersona, resolveStandard } from "../../extensions/lib/paths.ts";
 import {
+  nextAvailableReportPath,
   normalizeFeatureSlug,
   resolveArtifactDir,
   resolveArtifactLayout,
@@ -453,6 +454,78 @@ describe("normalizeFeatureSlug", () => {
   it("falls back to 'design' for empty or non-alphanumeric input", () => {
     expect(normalizeFeatureSlug("")).toBe("design");
     expect(normalizeFeatureSlug("!!!")).toBe("design");
+  });
+});
+
+describe("nextAvailableReportPath", () => {
+  function makeReportDir(): string {
+    return mkdtempSync(path.join(os.tmpdir(), "egm-reports-"));
+  }
+
+  it("returns <base>.md unchanged when nothing exists", () => {
+    const dir = makeReportDir();
+    try {
+      expect(nextAvailableReportPath(dir, "goldfish_review_report.md")).toBe(
+        path.join(dir, "goldfish_review_report.md"),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("appends -2 and -3 around existing reports", () => {
+    const dir = makeReportDir();
+    try {
+      writeFileSync(path.join(dir, "r.md"), "x");
+      expect(nextAvailableReportPath(dir, "r.md")).toBe(path.join(dir, "r-2.md"));
+      writeFileSync(path.join(dir, "r-2.md"), "x");
+      expect(nextAvailableReportPath(dir, "r.md")).toBe(path.join(dir, "r-3.md"));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("normalizes the extension to lowercase .md and adds it when missing", () => {
+    const dir = makeReportDir();
+    try {
+      expect(nextAvailableReportPath(dir, "r.MD")).toBe(path.join(dir, "r.md"));
+      writeFileSync(path.join(dir, "r.md"), "x");
+      expect(nextAvailableReportPath(dir, "r.MD")).toBe(path.join(dir, "r-2.md"));
+      expect(nextAvailableReportPath(dir, "notes")).toBe(path.join(dir, "notes.md"));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("composes with the structured layout: collisions stay inside the slug directory", () => {
+    const ws = mkdtempSync(path.join(os.tmpdir(), "egm-layout-ws-"));
+    delete process.env.EGM_ARTIFACT_DIR;
+    delete process.env.EGM_ARTIFACT_LAYOUT;
+    try {
+      const first = resolveArtifactPath(ws, { name: "r.md", slug: "s" });
+      writeFileSync(first, "x");
+      const second = nextAvailableReportPath(path.dirname(first), path.basename(first));
+      expect(second).toBe(path.resolve(ws, "egm", "s", "r-2.md"));
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+
+  it("composes with flat mode: collisions stay in the flat artifact directory", () => {
+    const ws = mkdtempSync(path.join(os.tmpdir(), "egm-layout-ws-"));
+    delete process.env.EGM_ARTIFACT_DIR;
+    process.env.EGM_ARTIFACT_LAYOUT = "flat";
+    try {
+      const first = resolveArtifactPath(ws, { name: "r.md", slug: "s" });
+      expect(first).toBe(path.resolve(ws, "r.md"));
+      writeFileSync(first, "x");
+      expect(nextAvailableReportPath(path.dirname(first), path.basename(first))).toBe(
+        path.resolve(ws, "r-2.md"),
+      );
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+      delete process.env.EGM_ARTIFACT_LAYOUT;
+    }
   });
 });
 
