@@ -86,7 +86,10 @@ function readFrontmatter(file: string): Frontmatter {
     if (value === "" || /^[>|][+-]?\d*$/.test(value)) {
       const rest: string[] = [];
       i++;
-      while (i < block.length && (block[i].startsWith(" ") || block[i].startsWith("\t") || block[i].trim() === "")) {
+      while (
+        i < block.length &&
+        (block[i].startsWith(" ") || block[i].startsWith("\t") || block[i].trim() === "")
+      ) {
         rest.push(block[i].trim());
         i++;
       }
@@ -200,14 +203,18 @@ describe("scenario coverage", () => {
 
   describe.skipIf(!upstreamCloneExists)("inventory parity with the upstream clone", () => {
     it("agents/ and resources/document_standards/ listings match upstream exactly", () => {
-      const localAgents = readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md")).sort();
+      const localAgents = readdirSync(AGENTS_DIR)
+        .filter((f) => f.endsWith(".md"))
+        .sort();
       const upstreamAgents = readdirSync(path.join(UPSTREAM_ROOT, "agents"))
         .filter((f) => f.endsWith(".md"))
         .sort();
       expect(localAgents).toEqual(upstreamAgents);
       expect(localAgents).toHaveLength(9);
 
-      const localStandards = readdirSync(STANDARDS_DIR).filter((f) => f.endsWith(".md")).sort();
+      const localStandards = readdirSync(STANDARDS_DIR)
+        .filter((f) => f.endsWith(".md"))
+        .sort();
       const upstreamStandardsDir = path.join(UPSTREAM_ROOT, "resources", "document_standards");
       if (existsSync(upstreamStandardsDir) && statSync(upstreamStandardsDir).isDirectory()) {
         const upstreamStandards = readdirSync(upstreamStandardsDir)

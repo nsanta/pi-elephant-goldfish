@@ -20,6 +20,11 @@ import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import { getSelectListTheme } from "@earendil-works/pi-coding-agent";
 import { SelectList, truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import {
+  type AskOption,
+  formatAskOption,
+  normalizeAskOptions,
+} from "./lib/ask-options.ts";
 import { registerBootstrapTool } from "./lib/bootstrap.ts";
 import { registerEgmCommands } from "./lib/commands.ts";
 import { registerGoldfishTool } from "./lib/goldfish.ts";
@@ -37,11 +42,15 @@ class AskSelectDialog {
 
   constructor(
     private readonly question: string,
-    private readonly options: string[],
+    private readonly options: AskOption[],
     private readonly theme: Theme,
     private readonly done: (result: number | null) => void,
   ) {
-    const items = options.map((label, index) => ({ value: String(index), label }));
+    const items = options.map((option, index) => ({
+      value: String(index),
+      label: option.title,
+      description: option.description,
+    }));
     this.list = new SelectList(items, Math.min(items.length, 8), getSelectListTheme());
     this.list.onSelect = (item) => this.done(Number(item.value));
     this.list.onCancel = () => this.done(null);
@@ -66,7 +75,12 @@ class AskSelectDialog {
     lines.push("");
     lines.push(...this.list.render(width));
     lines.push("");
-    lines.push(truncateToWidth(this.theme.fg("dim", "↑/↓ or 1-9 select · Enter confirm · Esc cancel"), width));
+    lines.push(
+      truncateToWidth(
+        this.theme.fg("dim", "↑/↓ or 1-9 select · Enter confirm · Esc cancel"),
+        width,
+      ),
+    );
     return lines;
   }
 
@@ -80,12 +94,22 @@ type AskDetails =
   | { selected: null }
   | { mode: "plain-chat-fallback" };
 
+const AskOptionObject = Type.Object({
+  title: Type.String({ minLength: 1, description: "Short, action-oriented option label." }),
+  description: Type.Optional(
+    Type.String({
+      description: "Mechanism, trade-offs, or the conditions under which this option fails.",
+    }),
+  ),
+});
+
 const AskParams = Type.Object({
   question: Type.String({ minLength: 1, description: "The single question to ask the user." }),
-  options: Type.Array(Type.String(), {
+  options: Type.Array(Type.Union([Type.String(), AskOptionObject]), {
     minItems: 2,
     maxItems: 8,
-    description: "2-8 plain option strings. Do not add '(Recommended)' style prefixes.",
+    description:
+      "2-8 options. Each option is a plain string or a {title, description} object (the description carries the option's trade-offs). Do not add '(Recommended)' style markers; they are stripped.",
   }),
 });
 
@@ -101,16 +125,23 @@ export default function egmCore(pi: ExtensionAPI) {
     name: "egm_ask",
     label: "EGM Ask",
     description:
-      "Single-select interactive gate for EGM workflows. Call it as the SOLE tool call in the turn, with exactly one question and 2-8 plain options (no '(Recommended)' prefixes). If no interactive UI is available, the tool result tells you to ask the question in plain chat instead.",
+      "Single-select interactive gate for EGM workflows. Call it as the SOLE tool call in the turn, with exactly one question and 2-8 options; each option is a plain string or a {title, description} object, and '(Recommended)' markers are stripped. If no interactive UI is available, the tool result tells you to ask the question in plain chat instead.",
     parameters: AskParams,
-    async execute(_toolCallId, params, _signal, _onUpdate, ctx): Promise<{
+    async execute(
+      _toolCallId,
+      params,
+      _signal,
+      _onUpdate,
+      ctx,
+    ): Promise<{
       content: [{ type: "text"; text: string }];
       details: AskDetails;
     }> {
+      const options = normalizeAskOptions(params.options);
       if (ctx.hasUI && ctx.mode === "tui") {
         const selected = await ctx.ui.custom<number | null>(
           (_tui, theme, _keybindings, done) =>
-            new AskSelectDialog(params.question, params.options, theme, done),
+            new AskSelectDialog(params.question, options, theme, done),
         );
         if (selected === null || selected === undefined) {
           return {
@@ -123,14 +154,15 @@ export default function egmCore(pi: ExtensionAPI) {
             details: { selected: null },
           };
         }
-        const option = params.options[selected] ?? "";
+        const option = options[selected] ?? { title: "" };
+        const optionText = formatAskOption(option);
         return {
-          content: [{ type: "text", text: `User selected: ${option}` }],
-          details: { selected, option },
+          content: [{ type: "text", text: `User selected: ${optionText}` }],
+          details: { selected, option: optionText },
         };
       }
 
-      const optionList = params.options.map((option, index) => `${index + 1}) ${option}`).join(" ");
+      const optionList = options.map((option, index) => `${index + 1}) ${formatAskOption(option)}`).join(" ");
       return {
         content: [
           {

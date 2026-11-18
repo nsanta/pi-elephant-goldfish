@@ -14,7 +14,11 @@ import path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { withFileMutationQueue } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { getGoldfishMaxConcurrent, getGoldfishTimeoutMs, resolveArtifactDir } from "./artifact-dir.ts";
+import {
+  getGoldfishMaxConcurrent,
+  getGoldfishTimeoutMs,
+  resolveArtifactDir,
+} from "./artifact-dir.ts";
 import { resolvePersona, resolveStandard, type ResolvedResource } from "./paths.ts";
 
 const CHILD_TOOLS = "read,grep,find,ls";
@@ -36,12 +40,14 @@ const GoldfishParams = Type.Object({
   }),
   range: Type.Optional(
     Type.String({
-      description: 'Target range within the document, e.g. "12-48". Omit or use "full file" for the whole file.',
+      description:
+        'Target range within the document, e.g. "12-48". Omit or use "full file" for the whole file.',
     }),
   ),
   semanticTarget: Type.Optional(
     Type.String({
-      description: "Descriptive targeting string passed through to reviewers, e.g. 'the error-handling subsections'.",
+      description:
+        "Descriptive targeting string passed through to reviewers, e.g. 'the error-handling subsections'.",
     }),
   ),
   standards: Type.Optional(
@@ -58,12 +64,14 @@ const GoldfishParams = Type.Object({
   mode: Type.Optional(
     Type.Union([Type.Literal("review"), Type.Literal("brainstorm")], {
       default: "review",
-      description: "Reviewer mode. review: audit and report findings. brainstorm: same rigor, generative focus.",
+      description:
+        "Reviewer mode. review: audit and report findings. brainstorm: same rigor, generative focus.",
     }),
   ),
   outputFileName: Type.Optional(
     Type.String({
-      description: "Report filename inside the artifact directory (a number is appended if the file already exists).",
+      description:
+        "Report filename inside the artifact directory (a number is appended if the file already exists).",
     }),
   ),
 });
@@ -142,11 +150,11 @@ function runGoldfishChild(
     let stdout = "";
     let stderr = "";
 
-    const child = spawn(
-      piBinary,
-      ["--print", "--no-session", "--tools", CHILD_TOOLS, prompt],
-      { cwd: workspaceRoot, stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
-    );
+    const child = spawn(piBinary, ["--print", "--no-session", "--tools", CHILD_TOOLS, prompt], {
+      cwd: workspaceRoot,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
 
     const finish = (status: ReviewerStatus, errorMessage?: string) => {
       if (settled) return;
@@ -198,7 +206,10 @@ function runGoldfishChild(
         finish("ok");
         return;
       }
-      finish("error", `exited with code ${code ?? "null"}${signalName ? ` (signal ${signalName})` : ""}`);
+      finish(
+        "error",
+        `exited with code ${code ?? "null"}${signalName ? ` (signal ${signalName})` : ""}`,
+      );
     });
   });
 }
@@ -228,7 +239,9 @@ function buildChildPrompt(options: {
   }
   lines.push(targetParts.join(" "));
   if (options.goldfishContext && options.goldfishContext.length > 0) {
-    lines.push(`Baseline reading list (read these before judging): ${options.goldfishContext.join(", ")}`);
+    lines.push(
+      `Baseline reading list (read these before judging): ${options.goldfishContext.join(", ")}`,
+    );
   }
   lines.push(
     `Audit the target per your persona${options.standardPath ? " and standard" : ""} and report findings as your FINAL message, each in exactly this format:`,
@@ -374,13 +387,19 @@ export function registerGoldfishTool(pi: ExtensionAPI): void {
       });
 
       // Bounded-concurrency fan-out.
-      const outcomes: ChildOutcome[] = new Array(planned.length);
+      const outcomes: ChildOutcome[] = [];
       let nextIndex = 0;
       const workers = Array.from({ length: Math.min(concurrency, planned.length) }, async () => {
         while (nextIndex < planned.length) {
           const index = nextIndex++;
           const plan = planned[index];
-          const result = await runGoldfishChild(piBinary, plan.prompt, workspaceRoot, timeoutMs, signal);
+          const result = await runGoldfishChild(
+            piBinary,
+            plan.prompt,
+            workspaceRoot,
+            timeoutMs,
+            signal,
+          );
           outcomes[index] = { reviewer: plan.reviewer, standard: plan.standard, ...result };
         }
       });
@@ -392,7 +411,10 @@ export function registerGoldfishTool(pi: ExtensionAPI): void {
 
       if (okCount === 0) {
         const tails = outcomes
-          .map((o) => `${o.reviewer.canonicalName} (${o.status}): ${singleLine(o.errorMessage) || singleLine(o.stderrTail) || "no output"}`)
+          .map(
+            (o) =>
+              `${o.reviewer.canonicalName} (${o.status}): ${singleLine(o.errorMessage) || singleLine(o.stderrTail) || "no output"}`,
+          )
           .join("\n");
         throw new Error(`All ${outcomes.length} egm_goldfish reviewers failed.\n${tails}`);
       }
@@ -410,27 +432,41 @@ export function registerGoldfishTool(pi: ExtensionAPI): void {
       // Report filename and artifact directory.
       const artifactDir = resolveArtifactDir(workspaceRoot);
       const fallbackBase =
-        planned.length === 1 ? `${planned[0].reviewer.canonicalName}_report` : "goldfish_review_report";
-      const requestedName = params.outputFileName ? path.basename(params.outputFileName) : fallbackBase;
+        planned.length === 1
+          ? `${planned[0].reviewer.canonicalName}_report`
+          : "goldfish_review_report";
+      const requestedName = params.outputFileName
+        ? path.basename(params.outputFileName)
+        : fallbackBase;
 
-      const reportPath = await withFileMutationQueue(path.join(artifactDir, requestedName), async () => {
-        const unique = nextAvailableReportPath(artifactDir, requestedName);
-        await writeFile(unique, buildReport({
-          targetFile,
-          range: params.range,
-          mode,
-          semanticTarget: params.semanticTarget,
-          outcomes,
-        }), "utf8");
-        return unique;
-      });
+      const reportPath = await withFileMutationQueue(
+        path.join(artifactDir, requestedName),
+        async () => {
+          const unique = nextAvailableReportPath(artifactDir, requestedName);
+          await writeFile(
+            unique,
+            buildReport({
+              targetFile,
+              range: params.range,
+              mode,
+              semanticTarget: params.semanticTarget,
+              outcomes,
+            }),
+            "utf8",
+          );
+          return unique;
+        },
+      );
 
       const contentLines = [
         `Findings written to ${reportPath}. Reviewers: ${okCount} ok, ${failedOutcomes.length} failed. Findings tally: ${total.blocker} Blocker, ${total.major} Major, ${total.nit} Nit.`,
       ];
       for (const failed of failedOutcomes) {
-        const detail = singleLine(failed.errorMessage) || singleLine(failed.stderrTail) || "no stderr captured";
-        contentLines.push(`Reviewer ${failed.reviewer.canonicalName}: ${failed.status} — ${detail}`);
+        const detail =
+          singleLine(failed.errorMessage) || singleLine(failed.stderrTail) || "no stderr captured";
+        contentLines.push(
+          `Reviewer ${failed.reviewer.canonicalName}: ${failed.status} — ${detail}`,
+        );
       }
 
       return {

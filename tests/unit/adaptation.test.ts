@@ -19,7 +19,16 @@
  * vendored files. No substitution logic is reimplemented in the test.
  */
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -50,9 +59,10 @@ describe("adaptation invariants", () => {
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
       const content = readFileSync(file, "utf8");
-      expect(content, `${path.relative(REPO_ROOT, file)} contains CLAUDE_PLUGIN_ROOT`).not.toContain(
-        "CLAUDE_PLUGIN_ROOT",
-      );
+      expect(
+        content,
+        `${path.relative(REPO_ROOT, file)} contains CLAUDE_PLUGIN_ROOT`,
+      ).not.toContain("CLAUDE_PLUGIN_ROOT");
       expect(content, `${path.relative(REPO_ROOT, file)} contains ask_question`).not.toContain(
         "ask_question",
       );
@@ -88,69 +98,85 @@ describe("adaptation invariants", () => {
   });
 });
 
-describe.skipIf(!upstreamCloneExists)("adapt-pi.mjs sync fidelity (real script, pristine upstream tree)", () => {
-  // adapt-pi.mjs is intentionally drift-detecting: it FAILS when an expected
-  // upstream anchor is missing, so running it a second time over already-
-  // adapted output is expected to fail and is NOT how sync idempotence is
-  // proven here. Instead: two independent runs over two fresh pristine
-  // upstream copies must each reproduce the vendored tree byte-identically
-  // (fidelity + determinism).
-  function runOnFreshUpstream(): string {
-    const tmp = mkdtempSync(path.join(os.tmpdir(), "egm-adapt-"));
-    try {
-      // Scaffold: <tmp>/scripts/adapt-pi.mjs (ROOT=<tmp>) + <tmp>/skills/...
-      const scriptsDir = path.join(tmp, "scripts");
-      const tmpSkillsDir = path.join(tmp, "skills");
-      mkdirSync(scriptsDir, { recursive: true });
-      cpSync(path.join(REPO_ROOT, "scripts", "adapt-pi.mjs"), path.join(scriptsDir, "adapt-pi.mjs"));
+describe.skipIf(!upstreamCloneExists)(
+  "adapt-pi.mjs sync fidelity (real script, pristine upstream tree)",
+  () => {
+    // adapt-pi.mjs is intentionally drift-detecting: it FAILS when an expected
+    // upstream anchor is missing, so running it a second time over already-
+    // adapted output is expected to fail and is NOT how sync idempotence is
+    // proven here. Instead: two independent runs over two fresh pristine
+    // upstream copies must each reproduce the vendored tree byte-identically
+    // (fidelity + determinism).
+    function runOnFreshUpstream(): string {
+      const tmp = mkdtempSync(path.join(os.tmpdir(), "egm-adapt-"));
+      try {
+        // Scaffold: <tmp>/scripts/adapt-pi.mjs (ROOT=<tmp>) + <tmp>/skills/...
+        const scriptsDir = path.join(tmp, "scripts");
+        const tmpSkillsDir = path.join(tmp, "skills");
+        mkdirSync(scriptsDir, { recursive: true });
+        cpSync(
+          path.join(REPO_ROOT, "scripts", "adapt-pi.mjs"),
+          path.join(scriptsDir, "adapt-pi.mjs"),
+        );
 
-      const upstreamSkillDirs = readdirSync(path.join(UPSTREAM_ROOT, "skills")).filter(
-        (d) => !d.startsWith("."),
-      );
-      for (const dir of upstreamSkillDirs) {
-        cpSync(path.join(UPSTREAM_ROOT, "skills", dir), path.join(tmpSkillsDir, dir), {
-          recursive: true,
+        const upstreamSkillDirs = readdirSync(path.join(UPSTREAM_ROOT, "skills")).filter(
+          (d) => !d.startsWith("."),
+        );
+        for (const dir of upstreamSkillDirs) {
+          cpSync(path.join(UPSTREAM_ROOT, "skills", dir), path.join(tmpSkillsDir, dir), {
+            recursive: true,
+          });
+        }
+
+        return execFileSync("node", [path.join(scriptsDir, "adapt-pi.mjs")], {
+          cwd: tmp,
+          encoding: "utf8",
         });
+      } finally {
+        rmSync(tmp, { recursive: true, force: true });
       }
-
-      return execFileSync("node", [path.join(scriptsDir, "adapt-pi.mjs")], {
-        cwd: tmp,
-        encoding: "utf8",
-      });
-    } finally {
-      rmSync(tmp, { recursive: true, force: true });
     }
-  }
 
-  it("regenerates all 7 vendored SKILL.md files byte-identically, deterministically across runs", () => {
-    const firstRun = runOnFreshUpstream();
-    expect(firstRun).toContain("all adaptations applied");
+    it("regenerates all 7 vendored SKILL.md files byte-identically, deterministically across runs", () => {
+      const firstRun = runOnFreshUpstream();
+      expect(firstRun).toContain("all adaptations applied");
 
-    const secondRun = runOnFreshUpstream();
-    expect(secondRun).toBe(firstRun); // deterministic output
+      const secondRun = runOnFreshUpstream();
+      expect(secondRun).toBe(firstRun); // deterministic output
 
-    // Both scaffolds were cleaned up, so regenerate one and compare its
-    // SKILL.md files against the vendored tree.
-    const tmp = mkdtempSync(path.join(os.tmpdir(), "egm-adapt-"));
-    try {
-      const scriptsDir = path.join(tmp, "scripts");
-      const tmpSkillsDir = path.join(tmp, "skills");
-      mkdirSync(scriptsDir, { recursive: true });
-      cpSync(path.join(REPO_ROOT, "scripts", "adapt-pi.mjs"), path.join(scriptsDir, "adapt-pi.mjs"));
-      for (const dir of readdirSync(path.join(UPSTREAM_ROOT, "skills")).filter((d) => !d.startsWith("."))) {
-        cpSync(path.join(UPSTREAM_ROOT, "skills", dir), path.join(tmpSkillsDir, dir), { recursive: true });
+      // Both scaffolds were cleaned up, so regenerate one and compare its
+      // SKILL.md files against the vendored tree.
+      const tmp = mkdtempSync(path.join(os.tmpdir(), "egm-adapt-"));
+      try {
+        const scriptsDir = path.join(tmp, "scripts");
+        const tmpSkillsDir = path.join(tmp, "skills");
+        mkdirSync(scriptsDir, { recursive: true });
+        cpSync(
+          path.join(REPO_ROOT, "scripts", "adapt-pi.mjs"),
+          path.join(scriptsDir, "adapt-pi.mjs"),
+        );
+        for (const dir of readdirSync(path.join(UPSTREAM_ROOT, "skills")).filter(
+          (d) => !d.startsWith("."),
+        )) {
+          cpSync(path.join(UPSTREAM_ROOT, "skills", dir), path.join(tmpSkillsDir, dir), {
+            recursive: true,
+          });
+        }
+        execFileSync("node", [path.join(scriptsDir, "adapt-pi.mjs")], {
+          cwd: tmp,
+          encoding: "utf8",
+        });
+        for (const dir of skillDirs()) {
+          const generated = readFileSync(path.join(tmpSkillsDir, dir, "SKILL.md"));
+          const vendored = readFileSync(path.join(SKILLS_DIR, dir, "SKILL.md"));
+          expect(
+            generated.equals(vendored),
+            `skills/${dir}/SKILL.md differs from adapt-pi.mjs output over pristine upstream`,
+          ).toBe(true);
+        }
+      } finally {
+        rmSync(tmp, { recursive: true, force: true });
       }
-      execFileSync("node", [path.join(scriptsDir, "adapt-pi.mjs")], { cwd: tmp, encoding: "utf8" });
-      for (const dir of skillDirs()) {
-        const generated = readFileSync(path.join(tmpSkillsDir, dir, "SKILL.md"));
-        const vendored = readFileSync(path.join(SKILLS_DIR, dir, "SKILL.md"));
-        expect(
-          generated.equals(vendored),
-          `skills/${dir}/SKILL.md differs from adapt-pi.mjs output over pristine upstream`,
-        ).toBe(true);
-      }
-    } finally {
-      rmSync(tmp, { recursive: true, force: true });
-    }
-  });
-});
+    });
+  },
+);

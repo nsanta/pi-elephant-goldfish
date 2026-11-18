@@ -32,7 +32,7 @@ document standards — is vendored verbatim from
 
 | Tool | Upstream mechanism | What it does on Pi |
 | --- | --- | --- |
-| `egm_ask` | `ask_question` gate | Single-select interactive gate (one question, 2–8 options); renders a native SelectList in the TUI, falls back to plain chat headless. |
+| `egm_ask` | `ask_question` gate | Single-select interactive gate (one question, 2–8 options; each option is a plain string or a `{title, description}` object, and `(Recommended)` markers are stripped); renders a native SelectList in the TUI, falls back to plain chat headless. |
 | `egm_goldfish` | Antigravity `invoke_subagent` / Claude `Agent` / Codex `spawn_agent` | Spawns zero-context reviewers as read-only `pi --print` subprocesses, fans them out in parallel, and writes the consolidated report to the artifact directory. |
 | `egm_bootstrap` | Upstream `egm-bootstrap` recursive sub-orchestrator | Recursive directory documentation: discovery, >15-dir safety gate, partitioning, parallel read/write workers, JSON validation, root roll-up, final verification pass. |
 | `egm_state` | Harness-review pause/resume pipeline state | Persists or returns the review pipeline state as durable, branch-aware session entries (survives compaction and branching). |
@@ -122,7 +122,8 @@ artifacts there instead of the working directory.
   resume, compaction, and branching are safe.
 
 Port architecture and design decisions: [PLAN.md](PLAN.md). Harness guide for daily use
-(delegation mapping, bootstrap details, known limits): [docs/pi.md](docs/pi.md).
+(delegation mapping, bootstrap details, known limits): [docs/pi.md](docs/pi.md). How the
+extension works internally (diagrams, tool-by-tool): [docs/architecture.md](docs/architecture.md).
 
 ## Development
 

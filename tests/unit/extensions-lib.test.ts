@@ -21,6 +21,11 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { hostResolved } from "../helpers/host";
 
+import {
+  formatAskOption,
+  normalizeAskOptions,
+  stripRecommendedMarker,
+} from "../../extensions/lib/ask-options.ts";
 import { PACKAGE_ROOT, resolvePersona, resolveStandard } from "../../extensions/lib/paths.ts";
 import { resolveArtifactDir } from "../../extensions/lib/artifact-dir.ts";
 import {
@@ -31,6 +36,98 @@ import {
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const FIXTURES = path.join(REPO_ROOT, "scripts", "fixtures");
+
+// ---------------------------------------------------------------------------
+// ask-options.ts — egm_ask option normalization
+// ---------------------------------------------------------------------------
+
+describe("normalizeAskOptions", () => {
+  it("passes plain strings through as titles", () => {
+    expect(normalizeAskOptions(["Option A", "Option B"])).toEqual([
+      { title: "Option A" },
+      { title: "Option B" },
+    ]);
+  });
+
+  it("normalizes {title, description} objects (the shape models reach for)", () => {
+    expect(
+      normalizeAskOptions([
+        {
+          title: "Remove the router",
+          description: "Tier = floor tier, computed from hard rules.\nRemoves one model call.",
+        },
+        { title: "Keep router + stability gates" },
+      ]),
+    ).toEqual([
+      {
+        title: "Remove the router",
+        description: "Tier = floor tier, computed from hard rules. Removes one model call.",
+      },
+      { title: "Keep router + stability gates" },
+    ]);
+  });
+
+  it("accepts mixed arrays of both shapes", () => {
+    expect(
+      normalizeAskOptions(["Plain", { title: "Structured", description: "why" }]),
+    ).toEqual([{ title: "Plain" }, { title: "Structured", description: "why" }]);
+  });
+
+  it("drops null/undefined entries defensively", () => {
+    const raw: Array<string | { title: string } | null | undefined> = [
+      null,
+      "Real option",
+      undefined,
+    ];
+    expect(normalizeAskOptions(raw)).toEqual([{ title: "Real option" }]);
+  });
+
+  it("drops options left empty after normalization", () => {
+    expect(normalizeAskOptions(["(Recommended)", { title: "" }, "Real option"])).toEqual([
+      { title: "Real option" },
+    ]);
+  });
+
+  it("produces at least the two options the dialog needs from the smallest legal call", () => {
+    const options = normalizeAskOptions([
+      { title: "A", description: "first" },
+      "B",
+    ]);
+    expect(options.length).toBe(2);
+  });
+});
+
+describe("stripRecommendedMarker", () => {
+  it("strips trailing bracketed markers (the observed failure shape)", () => {
+    expect(stripRecommendedMarker("Remove the router (Recommended)")).toBe("Remove the router");
+    expect(stripRecommendedMarker("Keep as-is (recommended)")).toBe("Keep as-is");
+    expect(stripRecommendedMarker("Keep as-is：（Recommended）")).toBe("Keep as-is");
+  });
+
+  it("strips leading markers", () => {
+    expect(stripRecommendedMarker("(Recommended) Keep as-is")).toBe("Keep as-is");
+    expect(stripRecommendedMarker("Recommended: remove the router")).toBe("remove the router");
+  });
+
+  it("leaves ordinary prose containing the word untouched", () => {
+    expect(stripRecommendedMarker("Use the recommended settings")).toBe(
+      "Use the recommended settings",
+    );
+    expect(stripRecommendedMarker("Recommended for delayed approval")).toBe(
+      "Recommended for delayed approval",
+    );
+  });
+});
+
+describe("formatAskOption", () => {
+  it("renders titles alone when there is no description", () => {
+    expect(formatAskOption({ title: "Option A" })).toBe("Option A");
+  });
+
+  it("joins title and description with an em dash", () => {
+    expect(formatAskOption({ title: "Option A", description: "why" })).toBe("Option A — why");
+  });
+});
 
 // ---------------------------------------------------------------------------
 // paths.ts — persona / standard resolution
@@ -284,7 +381,9 @@ describe.skipIf(!hostResolved)("bootstrap.ts pure functions (host-gated)", () =>
     });
 
     it("extracts JSON wrapped in prose", () => {
-      expect(bootstrap.extractJson('Here is the result: {"a": 1} — hope it helps')).toEqual({ a: 1 });
+      expect(bootstrap.extractJson('Here is the result: {"a": 1} — hope it helps')).toEqual({
+        a: 1,
+      });
     });
 
     it("prefers the fenced block over an earlier brace span", () => {
@@ -343,13 +442,21 @@ describe.skipIf(!hostResolved)("bootstrap.ts pure functions (host-gated)", () =>
 
     it("rejects entries with wrong field types (nothing coerced)", () => {
       const result = bootstrap.validateSubtreeIndex({
-        subtree_index: [{ path: 1, summary: null }, { path: "ok", summary: "ok", interface: "not-an-array" }, { path: "ok", summary: "ok", invariants: [7] }],
+        subtree_index: [
+          { path: 1, summary: null },
+          { path: "ok", summary: "ok", interface: "not-an-array" },
+          { path: "ok", summary: "ok", invariants: [7] },
+        ],
       });
       expect(result.ok).toBe(false);
       expect(result.errors.join("\n")).toMatch(/subtree_index\[0\]\.path must be a string/);
       expect(result.errors.join("\n")).toMatch(/subtree_index\[0\]\.summary must be a string/);
-      expect(result.errors.join("\n")).toMatch(/subtree_index\[1\]\.interface must be an array of strings/);
-      expect(result.errors.join("\n")).toMatch(/subtree_index\[2\]\.invariants must contain only strings/);
+      expect(result.errors.join("\n")).toMatch(
+        /subtree_index\[1\]\.interface must be an array of strings/,
+      );
+      expect(result.errors.join("\n")).toMatch(
+        /subtree_index\[2\]\.invariants must contain only strings/,
+      );
     });
   });
 
@@ -466,7 +573,16 @@ describe.skipIf(!hostResolved)("bootstrap.ts pure functions (host-gated)", () =>
       );
       writeFileSync(
         path.join(root, "docs", "README.md"),
-        ["# docs", "", "## Overview", "Repository documentation.", "", "## Subdirectories & Boundaries", "- none", ""].join("\n"),
+        [
+          "# docs",
+          "",
+          "## Overview",
+          "Repository documentation.",
+          "",
+          "## Subdirectories & Boundaries",
+          "- none",
+          "",
+        ].join("\n"),
       );
       mkdirSync(path.join(root, "empty"), { recursive: true });
       writeFileSync(path.join(root, "empty", "README.md"), "");
@@ -534,7 +650,10 @@ describe.skipIf(!hostResolved)("bootstrap.ts pure functions (host-gated)", () =>
       const file = path.join(root, "src", "core", "README.md");
       const original = readFileSync(file, "utf8");
       try {
-        const emptied = original.replace(/## Invariants\n[\s\S]*?(?=## Side Effects)/, "## Invariants\n\n");
+        const emptied = original.replace(
+          /## Invariants\n[\s\S]*?(?=## Side Effects)/,
+          "## Invariants\n\n",
+        );
         writeFileSync(file, emptied);
         const violations = bootstrap.verifyContractFiles([file], root, discovered, "npm test");
         expect(violations.join("\n")).toMatch(/Invariants section is empty/);

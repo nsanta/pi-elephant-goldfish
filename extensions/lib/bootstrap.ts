@@ -12,7 +12,7 @@
  * tested without spawning child processes.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { mkdir, readFile, writeFile as writeFileAsync } from "node:fs/promises";
+import { mkdir, writeFile as writeFileAsync } from "node:fs/promises";
 import path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
@@ -25,7 +25,6 @@ import {
   getBootstrapTimeoutMs,
   runPool,
   runWorkerChild,
-  type WorkerChildResult,
 } from "./worker-run.ts";
 
 // ---------------------------------------------------------------------------
@@ -280,10 +279,7 @@ export function partitionTree(dirs: string[]): string[] {
  * Assign each pruned directory to its deepest containing partition, so an
  * ancestor fallback partition never steals dirs from nested selected ones.
  */
-export function assignPartitionDirs(
-  partitions: string[],
-  pruned: string[],
-): Map<string, string[]> {
+export function assignPartitionDirs(partitions: string[], pruned: string[]): Map<string, string[]> {
   const assigned = new Map<string, string[]>(partitions.map((p) => [p, []]));
   for (const dir of pruned) {
     const owners = partitions
@@ -342,7 +338,8 @@ export function validateSubtreeIndex(parsed: unknown): { ok: boolean; errors: st
     }
     const entry = item as Record<string, unknown>;
     if (typeof entry.path !== "string") errors.push(`subtree_index[${i}].path must be a string`);
-    if (typeof entry.summary !== "string") errors.push(`subtree_index[${i}].summary must be a string`);
+    if (typeof entry.summary !== "string")
+      errors.push(`subtree_index[${i}].summary must be a string`);
     for (const key of ["interface", "invariants", "side_effects"] as const) {
       const value = entry[key];
       if (value === undefined) continue;
@@ -393,10 +390,7 @@ function basenameOf(relPath: string): string {
 /** Directories strictly between the root and the partition roots. */
 function intermediateDirs(pruned: string[], partitions: string[]): string[] {
   return pruned.filter(
-    (d) =>
-      d !== "" &&
-      !partitions.includes(d) &&
-      partitions.some((p) => p.startsWith(`${d}/`)),
+    (d) => d !== "" && !partitions.includes(d) && partitions.some((p) => p.startsWith(`${d}/`)),
   );
 }
 
@@ -413,7 +407,9 @@ function renderIntermediateBlueprint(
   lines.push(`# ${title}`);
   lines.push("");
   lines.push("## Overview");
-  lines.push(`Contract index for ${dirRel === "" ? "the repository root" : `\`${dirRel}\``}, rolled up from its documented subdirectories.`);
+  lines.push(
+    `Contract index for ${dirRel === "" ? "the repository root" : `\`${dirRel}\``}, rolled up from its documented subdirectories.`,
+  );
   lines.push("");
   for (const child of children) {
     const entry = entries.get(child);
@@ -427,7 +423,9 @@ function renderIntermediateBlueprint(
     const summary = entry?.summary ?? PLACEHOLDER_SUMMARY;
     const contractFile = path.join(targetRoot, child, targetFilename);
     if (existsSync(contractFile)) {
-      lines.push(`- ${basenameOf(child)}: [${basenameOf(child)}/${targetFilename}](./${basenameOf(child)}/${targetFilename}) - ${summary}`);
+      lines.push(
+        `- ${basenameOf(child)}: [${basenameOf(child)}/${targetFilename}](./${basenameOf(child)}/${targetFilename}) - ${summary}`,
+      );
     } else {
       lines.push(`- ${basenameOf(child)}: ${summary}`);
     }
@@ -481,7 +479,9 @@ export function verifyContractFiles(
     try {
       content = readFileSync(file, "utf8");
     } catch {
-      violations.push(`${relName}: contract file is missing (worker reported it but it does not exist)`);
+      violations.push(
+        `${relName}: contract file is missing (worker reported it but it does not exist)`,
+      );
       continue;
     }
     if (content.trim().length === 0) {
@@ -501,15 +501,23 @@ export function verifyContractFiles(
       const verification = sectionBody(content, /^verification$/i);
       if (verification === null) {
         violations.push(`${relName}: missing Verification section`);
-      } else if (verificationCommand !== "<test-command>" && !verification.includes(verificationCommand)) {
-        violations.push(`${relName}: Verification section does not mention "${verificationCommand}"`);
+      } else if (
+        verificationCommand !== "<test-command>" &&
+        !verification.includes(verificationCommand)
+      ) {
+        violations.push(
+          `${relName}: Verification section does not mention "${verificationCommand}"`,
+        );
       }
     } else {
       const overview = sectionBody(content, /^overview$|^system overview$/i);
       if (overview === null || overview.length === 0) {
         violations.push(`${relName}: blueprint missing a non-empty Overview section`);
       }
-      const subdirs = sectionBody(content, /^subdirectories(\s*&\s*(boundaries|system boundaries))?$/i);
+      const subdirs = sectionBody(
+        content,
+        /^subdirectories(\s*&\s*(boundaries|system boundaries))?$/i,
+      );
       if (subdirs === null || subdirs.length === 0) {
         violations.push(`${relName}: blueprint missing a non-empty Subdirectories section`);
       }
@@ -553,7 +561,8 @@ const RETRY_SUFFIX =
 
 const BootstrapParams = Type.Object({
   path: Type.String({
-    description: "The target root directory to bootstrap (absolute, or relative to the workspace root).",
+    description:
+      "The target root directory to bootstrap (absolute, or relative to the workspace root).",
   }),
   targetFilename: Type.Optional(
     Type.String({
@@ -567,17 +576,6 @@ const BootstrapParams = Type.Object({
     }),
   ),
 });
-
-interface WorkerOutcome {
-  partition: string;
-  status: "ok" | "failed";
-  attempts: number;
-  childStatus: WorkerChildResult["status"];
-  entries: SubtreeEntry[];
-  errors: string[];
-  stderrTail?: string;
-  errorMessage?: string;
-}
 
 function buildWorkerPrompt(options: {
   partitionDisplay: string;
@@ -617,7 +615,7 @@ function buildRootCompilerPrompt(options: {
       `if ${path.join(options.targetRoot, options.targetFilename)} already exists, read it first and preserve its existing title, metadata, ` +
       "and architectural overview at the top while correcting the rest to be EGM compliant. " +
       "Classify the root directory as a Repository Blueprint (Hay). " +
-      `Here are the merged worker payloads (JSON): ${JSON.stringify({ subtree_index: options.payload.map(({ intermediate, ...rest }) => ({ ...rest })) })}. ` +
+      `Here are the merged worker payloads (JSON): ${JSON.stringify({ subtree_index: options.payload.map(({ intermediate: _intermediate, ...rest }) => ({ ...rest })) })}. ` +
       "Roll up the top-level subdirectory boundaries; use relative links only to contract files that actually exist on disk. " +
       `Verification command: ${options.verificationCommand}. ` +
       `Write ${path.join(options.targetRoot, options.targetFilename)} with your write/edit tools. ` +
@@ -688,52 +686,73 @@ export function registerBootstrapTool(pi: ExtensionAPI): void {
       const concurrency = getBootstrapMaxConcurrent();
 
       // Step 3/4: one worker child per partition (root-acts-as-worker included).
-      const outcomes = await runPool(partitions, concurrency, async (partition, poolSignal) => {
-        const assignedDirs = (assignments.get(partition) ?? []).map((dir) => ({
-          path: dir,
-          files: (discovered.dirs.get(dir) ?? []).slice(0, 20),
-        }));
-        const prompt = buildWorkerPrompt({
-          partitionDisplay: partition === "" ? "." : partition,
-          assignedDirs,
-          targetFilename,
-          verificationCommand,
-        });
+      const outcomes = await runPool(
+        partitions,
+        concurrency,
+        async (partition, poolSignal) => {
+          const assignedDirs = (assignments.get(partition) ?? []).map((dir) => ({
+            path: dir,
+            files: (discovered.dirs.get(dir) ?? []).slice(0, 20),
+          }));
+          const prompt = buildWorkerPrompt({
+            partitionDisplay: partition === "" ? "." : partition,
+            assignedDirs,
+            targetFilename,
+            verificationCommand,
+          });
 
-        let attempts = 0;
-        let child = await runWorkerChild(prompt, targetRoot, timeoutMs, poolSignal);
-        attempts++;
-        let parsed = extractJson(child.stdout);
-        let check =
-          parsed !== undefined
-            ? validateSubtreeIndex(parsed)
-            : { ok: false, errors: ["no JSON object found in worker output"] };
-        if (child.status === "ok" && check.ok) {
-          return { partition, status: "ok" as const, attempts, childStatus: child.status, entries: buildEntries(parsed, targetRoot), errors: [], stderrTail: child.stderrTail };
-        }
+          let attempts = 0;
+          let child = await runWorkerChild(prompt, targetRoot, timeoutMs, poolSignal);
+          attempts++;
+          let parsed = extractJson(child.stdout);
+          let check =
+            parsed !== undefined
+              ? validateSubtreeIndex(parsed)
+              : { ok: false, errors: ["no JSON object found in worker output"] };
+          if (child.status === "ok" && check.ok) {
+            return {
+              partition,
+              status: "ok" as const,
+              attempts,
+              childStatus: child.status,
+              entries: buildEntries(parsed, targetRoot),
+              errors: [],
+              stderrTail: child.stderrTail,
+            };
+          }
 
-        // Upstream fault tolerance: exactly one JSON-shape retry.
-        child = await runWorkerChild(prompt + RETRY_SUFFIX, targetRoot, timeoutMs, poolSignal);
-        attempts++;
-        parsed = extractJson(child.stdout);
-        check =
-          parsed !== undefined
-            ? validateSubtreeIndex(parsed)
-            : { ok: false, errors: ["no JSON object found in worker output"] };
-        if (child.status === "ok" && check.ok) {
-          return { partition, status: "ok" as const, attempts, childStatus: child.status, entries: buildEntries(parsed, targetRoot), errors: [], stderrTail: child.stderrTail };
-        }
-        return {
-          partition,
-          status: "failed" as const,
-          attempts,
-          childStatus: child.status,
-          entries: [],
-          errors: check.errors.slice(0, 5),
-          stderrTail: child.stderrTail,
-          errorMessage: child.errorMessage,
-        };
-      }, signal);
+          // Upstream fault tolerance: exactly one JSON-shape retry.
+          child = await runWorkerChild(prompt + RETRY_SUFFIX, targetRoot, timeoutMs, poolSignal);
+          attempts++;
+          parsed = extractJson(child.stdout);
+          check =
+            parsed !== undefined
+              ? validateSubtreeIndex(parsed)
+              : { ok: false, errors: ["no JSON object found in worker output"] };
+          if (child.status === "ok" && check.ok) {
+            return {
+              partition,
+              status: "ok" as const,
+              attempts,
+              childStatus: child.status,
+              entries: buildEntries(parsed, targetRoot),
+              errors: [],
+              stderrTail: child.stderrTail,
+            };
+          }
+          return {
+            partition,
+            status: "failed" as const,
+            attempts,
+            childStatus: child.status,
+            entries: [],
+            errors: check.errors.slice(0, 5),
+            stderrTail: child.stderrTail,
+            errorMessage: child.errorMessage,
+          };
+        },
+        signal,
+      );
       signal?.throwIfAborted();
 
       // Merge payloads; placeholders for failed partitions (upstream tolerance).
@@ -764,7 +783,13 @@ export function registerBootstrapTool(pi: ExtensionAPI): void {
       const orchestratorWritten: string[] = [];
       for (const dir of intermediates) {
         const children = pruned.filter((d) => parentOf(d) === dir);
-        const markdown = renderIntermediateBlueprint(dir, children, entries, targetFilename, targetRoot);
+        const markdown = renderIntermediateBlueprint(
+          dir,
+          children,
+          entries,
+          targetFilename,
+          targetRoot,
+        );
         await mkdir(path.join(targetRoot, dir), { recursive: true });
         await writeFileAsync(path.join(targetRoot, dir, targetFilename), markdown, "utf8");
         orchestratorWritten.push(dir);
@@ -788,7 +813,6 @@ export function registerBootstrapTool(pi: ExtensionAPI): void {
         verificationCommand,
         payload: [...entries.values()],
       });
-      const existingRootFile = path.join(targetRoot, targetFilename);
       let rootChild = await runWorkerChild(rootPrompt, targetRoot, timeoutMs, signal);
       rootAttempts++;
       let rootParsed = extractJson(rootChild.stdout);
@@ -804,11 +828,11 @@ export function registerBootstrapTool(pi: ExtensionAPI): void {
           rootChild.errorMessage ??
           (rootParsed === undefined
             ? "root compiler returned no JSON object"
-            : "root compiler returned unexpected JSON (expected {\"root_written\": true})");
+            : 'root compiler returned unexpected JSON (expected {"root_written": true})');
       }
 
       // Step 5 pass 4: mandatory deterministic final verification.
-      const contractDirs = new Set<string>([...entries.keys()]);
+      const contractDirs = new Set<string>(entries.keys());
       if (rootStatus === "ok") contractDirs.add("");
       const contractFiles = [...contractDirs]
         .map((dir) => path.join(targetRoot, dir, targetFilename))
@@ -830,10 +854,14 @@ export function registerBootstrapTool(pi: ExtensionAPI): void {
       reportLines.push(`- Target: ${targetRoot}`);
       reportLines.push(`- Date: ${new Date().toISOString()}`);
       reportLines.push(`- Contract filename: ${targetFilename}`);
-      reportLines.push(`- Directories discovered: ${discovered.dirs.size - 1}; pruned: ${pruned.length}`);
+      reportLines.push(
+        `- Directories discovered: ${discovered.dirs.size - 1}; pruned: ${pruned.length}`,
+      );
       reportLines.push(`- Verification command: ${verificationCommand}`);
       reportLines.push(`- Partitions: ${partitions.map((p) => (p === "" ? "." : p)).join(", ")}`);
-      reportLines.push(`- Files written/corrected: ${contractFiles.length} across ${contractDirs.size} directories`);
+      reportLines.push(
+        `- Files written/corrected: ${contractFiles.length} across ${contractDirs.size} directories`,
+      );
       reportLines.push("");
       reportLines.push("## Workers");
       reportLines.push("");
@@ -841,12 +869,18 @@ export function registerBootstrapTool(pi: ExtensionAPI): void {
         reportLines.push(
           `- ${outcome.partition === "" ? "." : outcome.partition}: ${outcome.status} after ${outcome.attempts} attempt(s) (child: ${outcome.childStatus}); ${outcome.entries.length} entries`,
         );
-        if (outcome.errors.length > 0) reportLines.push(`  - validation errors: ${outcome.errors.join("; ")}`);
+        if (outcome.errors.length > 0)
+          reportLines.push(`  - validation errors: ${outcome.errors.join("; ")}`);
         if (outcome.errorMessage) reportLines.push(`  - error: ${outcome.errorMessage}`);
-        if (outcome.stderrTail) reportLines.push(`  - stderr tail: ${outcome.stderrTail.replace(/\s+/g, " ")}`);
+        if (outcome.stderrTail)
+          reportLines.push(`  - stderr tail: ${outcome.stderrTail.replace(/\s+/g, " ")}`);
       }
-      reportLines.push(`- Root compiler: ${rootStatus} after ${rootAttempts} attempt(s)${rootError ? ` — ${rootError}` : ""}`);
-      reportLines.push(`- Intermediate blueprints written by orchestrator: ${orchestratorWritten.length > 0 ? orchestratorWritten.join(", ") : "none"}`);
+      reportLines.push(
+        `- Root compiler: ${rootStatus} after ${rootAttempts} attempt(s)${rootError ? ` — ${rootError}` : ""}`,
+      );
+      reportLines.push(
+        `- Intermediate blueprints written by orchestrator: ${orchestratorWritten.length > 0 ? orchestratorWritten.join(", ") : "none"}`,
+      );
       reportLines.push("");
       reportLines.push("## Verification Violations");
       reportLines.push("");

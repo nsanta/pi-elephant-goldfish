@@ -53,7 +53,9 @@ function globToRegExp(glob: string): RegExp {
 
 function globMatches(glob: string): string[] {
   const re = globToRegExp(glob);
-  return walkRelative(REPO_ROOT).filter((rel) => re.test(rel) && existsSync(path.join(REPO_ROOT, rel)));
+  return walkRelative(REPO_ROOT).filter(
+    (rel) => re.test(rel) && existsSync(path.join(REPO_ROOT, rel)),
+  );
 }
 
 describe("package.json manifest", () => {

@@ -16,7 +16,7 @@
  * draft → review through an actual `pi install` of this package) is recorded
  * MANUALLY in TESTING.md, not automated here.
  */
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";

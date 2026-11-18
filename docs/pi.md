@@ -7,7 +7,8 @@ to the [Pi coding agent](https://github.com/earendil-works/pi-coding-agent).
 
 This repository is a Pi package: the EGM skills, reviewer personas, and document
 standards are vendored content, while the harness-specific behavior lives in a
-Pi extension (`extensions/`) that registers three tools and a set of `/egm-*`
+Pi extension (`extensions/`) (internals documented in
+[architecture.md](architecture.md)) that registers four tools and a set of `/egm-*`
 commands on session start. Instead of your harness's native subagent and
 question tools, Pi sessions drive EGM through these extension-registered tools:
 `egm_goldfish` (zero-context reviewer spawning), `egm_bootstrap` (recursive
@@ -84,7 +85,7 @@ with the uninterrupted preset.
 
 | Tool | Role |
 | --- | --- |
-| `egm_ask` | Single-select interactive gate for EGM workflows (one question, 2-8 options). Falls back to plain chat when no interactive UI is available. |
+| `egm_ask` | Single-select interactive gate for EGM workflows (one question, 2-8 options; each option is a plain string or a `{title, description}` object, so ask-user-style option objects validate and render instead of failing schema validation). Falls back to plain chat when no interactive UI is available. |
 | `egm_goldfish` | Spawns zero-context Goldfish reviewers as read-only `pi --print` subprocesses, fans them out in parallel, and writes the consolidated report to the artifact directory. |
 | `egm_bootstrap` | Recursively bootstraps EGM contract `README.md` files: discovery, safety gate, pruning, partitioning, parallel read-and-write worker subprocesses, JSON return validation, root roll-up, and a mandatory final verification pass. See [Bootstrap](#bootstrap). |
 | `egm_state` | Persists or returns the EGM review pipeline state for the current session branch (stored as durable session entries, so a long review survives compaction and branching). |

@@ -125,43 +125,51 @@ function findResponse(records: RpcRecord[]): RpcRecord {
   return response;
 }
 
-describe.skipIf(!process.env.EGM_E2E)("RPC smoke against the real pi CLI (env-gated: EGM_E2E)", () => {
-  it(
-    "/egm-version is handled",
-    async () => {
-      const records = await rpcCommand("prompt", "/egm-version", SMOKE_TIMEOUT_MS);
-      const response = findResponse(records);
-      expect(response["success"]).toBe(true);
-      expect((response["data"] as Record<string, unknown>)?.["disposition"]).toBe("handled");
-    },
-    SMOKE_TIMEOUT_MS + 5_000,
-  );
+describe.skipIf(!process.env.EGM_E2E)(
+  "RPC smoke against the real pi CLI (env-gated: EGM_E2E)",
+  () => {
+    it(
+      "/egm-version is handled",
+      async () => {
+        const records = await rpcCommand("prompt", "/egm-version", SMOKE_TIMEOUT_MS);
+        const response = findResponse(records);
+        expect(response["success"]).toBe(true);
+        expect((response["data"] as Record<string, unknown>)?.["disposition"]).toBe("handled");
+      },
+      SMOKE_TIMEOUT_MS + 5_000,
+    );
 
-  it(
-    "/egm-review with no args is handled and the assistant asks for the target document",
-    async () => {
-      const records = await rpcCommand("prompt", "/egm-review", WORKFLOW_START_TIMEOUT_MS, "assistantText");
-      const response = findResponse(records);
-      expect(response["success"]).toBe(true);
-      expect((response["data"] as Record<string, unknown>)?.["disposition"]).toBe("handled");
-      // The extension consumes the command and starts a user turn from the
-      // vendored skill body; the model's first assistant turn must ask for the
-      // review target. Assistant text arrives in `message_end` events (with a
-      // message.role === "assistant" and text content parts); start/update
-      // events carry empty content placeholders.
-      const assistantText = records
-        .filter((r) => r["type"] === "message_end")
-        .map((r) => (r as { message?: { role?: string; content?: unknown } }).message)
-        .filter((m) => m?.role === "assistant")
-        .flatMap((m) => (Array.isArray(m?.content) ? m.content : []))
-        .map((part) =>
-          part && typeof part === "object" && "text" in part
-            ? String((part as { text: string }).text)
-            : "",
-        )
-        .join("\n");
-      expect(assistantText.toLowerCase()).toMatch(/target/);
-    },
-    WORKFLOW_START_TIMEOUT_MS + 5_000,
-  );
-});
+    it(
+      "/egm-review with no args is handled and the assistant asks for the target document",
+      async () => {
+        const records = await rpcCommand(
+          "prompt",
+          "/egm-review",
+          WORKFLOW_START_TIMEOUT_MS,
+          "assistantText",
+        );
+        const response = findResponse(records);
+        expect(response["success"]).toBe(true);
+        expect((response["data"] as Record<string, unknown>)?.["disposition"]).toBe("handled");
+        // The extension consumes the command and starts a user turn from the
+        // vendored skill body; the model's first assistant turn must ask for the
+        // review target. Assistant text arrives in `message_end` events (with a
+        // message.role === "assistant" and text content parts); start/update
+        // events carry empty content placeholders.
+        const assistantText = records
+          .filter((r) => r["type"] === "message_end")
+          .map((r) => (r as { message?: { role?: string; content?: unknown } }).message)
+          .filter((m) => m?.role === "assistant")
+          .flatMap((m) => (Array.isArray(m?.content) ? m.content : []))
+          .map((part) =>
+            part && typeof part === "object" && "text" in part
+              ? String((part as { text: string }).text)
+              : "",
+          )
+          .join("\n");
+        expect(assistantText.toLowerCase()).toMatch(/target/);
+      },
+      WORKFLOW_START_TIMEOUT_MS + 5_000,
+    );
+  },
+);

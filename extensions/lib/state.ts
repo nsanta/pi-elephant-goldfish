@@ -21,7 +21,8 @@ interface StateToolDetails {
 
 const StateParams = Type.Object({
   action: Type.Union([Type.Literal("set"), Type.Literal("get")], {
-    description: "set: persist the pipeline state. get: return the last saved state on this branch.",
+    description:
+      "set: persist the pipeline state. get: return the last saved state on this branch.",
   }),
   value: Type.Optional(
     Type.Unknown({
@@ -71,7 +72,13 @@ export function registerStateTool(pi: ExtensionAPI): void {
     description:
       "Persist or return the EGM review pipeline state for the current session branch. State survives compaction and branching. Use it at stage boundaries of long EGM review pipelines; store compact JSON (preset, stage, line ranges, report paths, iteration counts).",
     parameters: StateParams,
-    async execute(_toolCallId, params, _signal, _onUpdate, ctx): Promise<{
+    async execute(
+      _toolCallId,
+      params,
+      _signal,
+      _onUpdate,
+      ctx,
+    ): Promise<{
       content: [{ type: "text"; text: string }];
       details: StateToolDetails;
     }> {

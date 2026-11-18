@@ -80,7 +80,10 @@ function readFrontmatter(content, file) {
     if (value === "" || /^[>|][+-]?\d*$/.test(value)) {
       const rest = [];
       i++;
-      while (i < block.length && (block[i].startsWith(" ") || block[i].startsWith("\t") || block[i].trim() === "")) {
+      while (
+        i < block.length &&
+        (block[i].startsWith(" ") || block[i].startsWith("\t") || block[i].trim() === "")
+      ) {
         rest.push(block[i].trim());
         i++;
       }
@@ -117,7 +120,9 @@ function checkFrontmatter() {
     if (!fm) continue;
     const name = typeof fm.name === "string" ? fm.name.trim() : "";
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name)) {
-      fail(`${file}: frontmatter 'name' missing or not lowercase/hyphen (${JSON.stringify(fm.name ?? "")})`);
+      fail(
+        `${file}: frontmatter 'name' missing or not lowercase/hyphen (${JSON.stringify(fm.name ?? "")})`,
+      );
     }
     const description = typeof fm.description === "string" ? fm.description.trim() : "";
     if (!description) {
@@ -183,11 +188,8 @@ function checkLinks() {
     const content = readFileSync(path, "utf8");
     // Strip fenced code blocks and inline backtick spans: links inside them
     // are literal examples, not rendered links (upstream semantics).
-    const clean = content
-      .replace(/```[\s\S]*?```/g, "")
-      .replace(/`[^`\n]*`/g, "");
+    const clean = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
 
-    const lines = clean.split(/\r?\n/);
     for (const match of clean.matchAll(LINK_RE)) {
       const target = match[2].trim();
       // Count line number from the pre-strip content position offset.
@@ -207,7 +209,9 @@ function checkLinks() {
       const resolved = resolve(dirname(path), fileTarget);
       const relTarget = relative(ROOT, resolved).split(sep).join("/");
       if (!existsSync(resolved) && !ALLOWED_MISSING_TARGETS.has(relTarget)) {
-        fail(`${loc}: broken relative link '[${match[1]}](${target})' -> ${relTarget} does not exist`);
+        fail(
+          `${loc}: broken relative link '[${match[1]}](${target})' -> ${relTarget} does not exist`,
+        );
       }
     }
   }
@@ -223,7 +227,7 @@ const { files, linksChecked } = checkLinks();
 
 console.log(
   `check-content: frontmatter checked for ${fmCount} file(s); ` +
-    `link integrity over ${files} markdown file(s), ${linksChecked} relative link(s)`
+    `link integrity over ${files} markdown file(s), ${linksChecked} relative link(s)`,
 );
 if (warnings > 0) console.log(`check-content: ${warnings} warning(s)`);
 if (failures > 0) {

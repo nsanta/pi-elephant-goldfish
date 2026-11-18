@@ -98,11 +98,11 @@ export function runWorkerChild(
     let stdout = "";
     let stderr = "";
 
-    const child = spawn(
-      "pi",
-      ["--print", "--no-session", "--tools", toolsFlag, prompt],
-      { cwd: workspaceRoot, stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
-    );
+    const child = spawn("pi", ["--print", "--no-session", "--tools", toolsFlag, prompt], {
+      cwd: workspaceRoot,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
 
     const finish = (status: WorkerStatus, errorMessage?: string) => {
       if (settled) return;
@@ -154,7 +154,10 @@ export function runWorkerChild(
         finish("ok");
         return;
       }
-      finish("error", `exited with code ${code ?? "null"}${signalName ? ` (signal ${signalName})` : ""}`);
+      finish(
+        "error",
+        `exited with code ${code ?? "null"}${signalName ? ` (signal ${signalName})` : ""}`,
+      );
     });
   });
 }
@@ -169,14 +172,17 @@ export async function runPool<T, R>(
   fn: (job: T, signal: AbortSignal | undefined) => Promise<R>,
   signal?: AbortSignal,
 ): Promise<R[]> {
-  const results: R[] = new Array(jobs.length);
+  const results: R[] = [];
   let nextIndex = 0;
-  const workers = Array.from({ length: Math.max(1, Math.min(concurrency, jobs.length)) }, async () => {
-    while (nextIndex < jobs.length) {
-      const index = nextIndex++;
-      results[index] = await fn(jobs[index], signal);
-    }
-  });
+  const workers = Array.from(
+    { length: Math.max(1, Math.min(concurrency, jobs.length)) },
+    async () => {
+      while (nextIndex < jobs.length) {
+        const index = nextIndex++;
+        results[index] = await fn(jobs[index], signal);
+      }
+    },
+  );
   await Promise.all(workers);
   return results;
 }

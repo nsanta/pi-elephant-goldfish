@@ -65,7 +65,7 @@ function piDelegation(file) {
 // Rewrite plugin-root-relative tokens in backticks to skill-relative paths.
 function relativize(content) {
   return content.replace(/`((?:agents|resources)\/[^`]+)`/g, (m, p) =>
-    p.startsWith("../") ? m : "`../../" + p + "`"
+    p.startsWith("../") ? m : "`../../" + p + "`",
   );
 }
 
@@ -82,7 +82,7 @@ for (const dir of skillDirs) {
     /When running in Codex or ChatGPT Work[\s\S]*?first\./,
     PI_HEADER,
     "harness header",
-    file
+    file,
   );
 
   // 2. Delegation block (only spawning skills carry it - 0 is valid elsewhere)
@@ -94,19 +94,12 @@ for (const dir of skillDirs) {
       DELEGATION_RE,
       piDelegation(dir),
       "delegation block",
-      file
+      file,
     );
   }
 
   // 3. Gate tool name
-  [content, counts.gate] = sub(
-    content,
-    /ask_question/g,
-    "egm_ask",
-    "ask_question rename",
-    file,
-    0
-  );
+  [content, counts.gate] = sub(content, /ask_question/g, "egm_ask", "ask_question rename", file, 0);
 
   // 4. Skill-relative paths
   const before = content;
@@ -119,7 +112,7 @@ for (const dir of skillDirs) {
 
 for (const s of stats) {
   console.log(
-    `adapt-pi: ${s.file} header=${s.header} delegation=${s.delegation ?? "-"} gate=${s.gate} paths=${s.paths}`
+    `adapt-pi: ${s.file} header=${s.header} delegation=${s.delegation ?? "-"} gate=${s.gate} paths=${s.paths}`,
   );
 }
 
