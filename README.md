@@ -97,7 +97,8 @@ From a project directory with the package loaded:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `EGM_ARTIFACT_DIR` | working directory | Directory for briefs, drafts, and reports. Also settable via an `EGM artifact directory: <path>` line in `AGENTS.md`. |
+| `EGM_ARTIFACT_LAYOUT` | `structured` | Artifact arrangement: `structured` files each design's artifacts under `<artifact-dir>/egm/<feature-slug>/`; `flat` writes them directly in the artifact directory (legacy behavior). Also settable via an `EGM artifact layout: flat` line in `AGENTS.md`/`CLAUDE.md`. |
+| `EGM_ARTIFACT_DIR` | working directory | Artifact root directory. Also settable via an `EGM artifact directory: <path>` line in `AGENTS.md`. |
 | `EGM_GOLDFISH_TIMEOUT_MS` | `900000` | Timeout for each spawned Goldfish reviewer child. |
 | `EGM_GOLDFISH_MAX_CONCURRENT` | `3` | Maximum number of Goldfish children running at once. |
 | `EGM_BOOTSTRAP_TIMEOUT_MS` | `900000` | Timeout for each spawned bootstrap worker child. |
@@ -106,6 +107,18 @@ From a project directory with the package loaded:
 `EGM artifact directory:` in `AGENTS.md` — the upstream convention works unchanged: if the
 project's `AGENTS.md` contains a line `EGM artifact directory: .dev/docs`, EGM writes its
 artifacts there instead of the working directory.
+
+By default the artifacts are arranged structurally, one folder per design:
+
+```
+<artifact-dir>/egm/
+├── <feature-slug>/          # concepts_brief.md, design_draft.md, *_report.md
+└── bootstrap/bootstrap_report.md
+```
+
+Agree on a short kebab-case `<feature-slug>` per design at the first gate and reuse it for
+that design's brief, draft, and reports (pass it as `egm_goldfish`'s `slug` parameter).
+Set `EGM_ARTIFACT_LAYOUT=flat` to restore the legacy flat layout.
 
 ## How it works
 

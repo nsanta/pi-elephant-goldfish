@@ -51,12 +51,25 @@ persona file from this package first. The extension fans reviewers out in
 parallel, collects their reports, and normalizes and deduplicates the findings
 itself, so no reviewer ever needs to nest another subagent.
 
-## Artifact directory
+## Artifact directory and layout
 
-By default EGM writes briefs, drafts, and reports to the working directory of
-the session. The upstream `AGENTS.md` convention still works: if the project's
-`AGENTS.md` contains a line `EGM artifact directory: <path>`, EGM writes its
-artifacts to that folder instead.
+The artifact root resolves from the `EGM_ARTIFACT_DIR` environment variable,
+then an `EGM artifact directory: <path>` line in `AGENTS.md`/`CLAUDE.md`, then
+the working directory. Inside it, artifacts are arranged structurally by
+default — one folder per design:
+
+```
+<artifact-dir>/egm/
+├── <feature-slug>/          # concepts_brief.md, design_draft.md, *_report.md
+└── bootstrap/bootstrap_report.md
+```
+
+Agree on a short kebab-case `<feature-slug>` per design at the first gate and
+reuse it for that design's brief, draft, and reports; pass the same value as
+`egm_goldfish`'s `slug` parameter. Setting `EGM_ARTIFACT_LAYOUT=flat` (env var,
+or an `EGM artifact layout: flat` line in `AGENTS.md`/`CLAUDE.md`) restores the
+legacy flat layout, with every artifact written directly in the artifact
+root.
 
 ## Commands
 
@@ -86,8 +99,8 @@ with the uninterrupted preset.
 | Tool | Role |
 | --- | --- |
 | `egm_ask` | Single-select interactive gate for EGM workflows (one question, 2-8 options; each option is a plain string or a `{title, description}` object, so ask-user-style option objects validate and render instead of failing schema validation). Falls back to plain chat when no interactive UI is available. |
-| `egm_goldfish` | Spawns zero-context Goldfish reviewers as read-only `pi --print` subprocesses, fans them out in parallel, and writes the consolidated report to the artifact directory. |
-| `egm_bootstrap` | Recursively bootstraps EGM contract `README.md` files: discovery, safety gate, pruning, partitioning, parallel read-and-write worker subprocesses, JSON return validation, root roll-up, and a mandatory final verification pass. See [Bootstrap](#bootstrap). |
+| `egm_goldfish` | Spawns zero-context Goldfish reviewers as read-only `pi --print` subprocesses, fans them out in parallel, and writes the consolidated report per the artifact layout (pass `slug` to file it under `<artifact-dir>/egm/<slug>/`; a number is appended on filename collisions). |
+| `egm_bootstrap` | Recursively bootstraps EGM contract `README.md` files: discovery, safety gate, pruning, partitioning, parallel read-and-write worker subprocesses, JSON return validation, root roll-up, and a mandatory final verification pass. Its own report is filed under `<artifact-dir>/egm/bootstrap/` (flat mode: the artifact root). See [Bootstrap](#bootstrap). |
 | `egm_state` | Persists or returns the EGM review pipeline state for the current session branch (stored as durable session entries, so a long review survives compaction and branching). |
 
 The review pipeline itself is model-driven from the vendored skill text; the
@@ -97,7 +110,8 @@ tools only provide the harness-specific mechanisms the skills describe.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `EGM_ARTIFACT_DIR` | working directory | Directory for briefs, drafts, and reports. Also settable via an `EGM artifact directory: <path>` line in `AGENTS.md`/`CLAUDE.md`. |
+| `EGM_ARTIFACT_LAYOUT` | `structured` | Artifact arrangement: `structured` (one `egm/<slug>/` folder per design) or `flat` (legacy, everything in the artifact root). Also settable via an `EGM artifact layout:` line in `AGENTS.md`/`CLAUDE.md`. |
+| `EGM_ARTIFACT_DIR` | working directory | Artifact root directory. Also settable via an `EGM artifact directory: <path>` line in `AGENTS.md`/`CLAUDE.md`. |
 | `EGM_GOLDFISH_TIMEOUT_MS` | `900000` | Timeout for each spawned Goldfish reviewer child. |
 | `EGM_GOLDFISH_MAX_CONCURRENT` | `3` | Maximum number of Goldfish children running at the same time. |
 | `EGM_BOOTSTRAP_TIMEOUT_MS` | `900000` | Timeout for each spawned `egm_bootstrap` worker child. |

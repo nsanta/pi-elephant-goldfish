@@ -31,6 +31,7 @@ const PROMPT = [
   'reviewers: ["zoom_out"]',
   'targetFile: "scripts/fixtures/sample-design.md"',
   'outputFileName: "integration-zoom-out-report.md"',
+  'slug: "layout-probe"',
   "Do not pass standards, range, or goldfishContext. When the tool returns,",
   "reply with only the report file path it returned.",
 ].join(" ");
@@ -58,9 +59,16 @@ describe.skipIf(!process.env.EGM_E2E)("real Goldfish reviewer (env-gated: EGM_E2
         }
         expect(stdout.trim()).toBeTruthy();
 
-        const reports = readdirSync(artifactDir).filter((f) => f.endsWith(".md"));
-        expect(reports, `no report written to ${artifactDir}`).toHaveLength(1);
-        const report = readFileSync(path.join(artifactDir, reports[0]), "utf8");
+        // Structured layout (the default): the report lands under
+        // <artifact-dir>/egm/<slug>/, never at the artifact-dir root.
+        const reportDir = path.join(artifactDir, "egm", "layout-probe");
+        const reports = readdirSync(reportDir).filter((f) => f.endsWith(".md"));
+        expect(reports, `no report written to ${reportDir}`).toHaveLength(1);
+        expect(
+          readdirSync(artifactDir).filter((f) => f.endsWith(".md")),
+          `stray report at the artifact-dir root ${artifactDir}`,
+        ).toHaveLength(0);
+        const report = readFileSync(path.join(reportDir, reports[0]), "utf8");
         expect(report).toContain("Goldfish Review Report");
         expect(report).toMatch(/Severity:\s*(Blocker|Major|Nit)/);
       } finally {

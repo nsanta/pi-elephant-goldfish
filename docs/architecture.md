@@ -58,7 +58,7 @@ scripted adaptations) as the single source of truth.
 | `extensions/lib/worker-run.ts` | Read-write worker child runner + bounded-concurrency pool (shared by bootstrap). |
 | `extensions/lib/state.ts` | `egm_state` durable branch-aware pipeline state. |
 | `extensions/lib/paths.ts` | Package-root derivation, persona/standard alias resolution. |
-| `extensions/lib/artifact-dir.ts` | Artifact-directory resolution, env knob parsing. |
+| `extensions/lib/artifact-dir.ts` | Artifact-directory and layout resolution (`flat`/`structured`), slug normalization, report-collision suffix, env knob parsing. |
 | `skills/egm-*/SKILL.md` | Vendored EGM skills (one `/egm-*` command each). |
 | `agents/*.md` | Vendored reviewer personas (zoom_out, comprehension, design_critic, implementation_readiness, structural, style, codebase_details; plus synthesizer and bootstrap_orchestrator roles that never spawn as reviewers). |
 | `resources/document_standards/*.md` | Vendored document standards enforced by reviewers in review-loop workflows. |
@@ -280,15 +280,23 @@ EGM_ARTIFACT_DIR env var
       └─ else the working directory
         │
         ▼  (created recursively if missing; relative → workspace root)
-concepts_brief.md   design_draft.md   goldfish_review_report.md
-*_report.md         bootstrap_report.md      (auto-numbered -2, -3…)
+EGM_ARTIFACT_LAYOUT env var
+   └─ else "EGM artifact layout: flat|structured" marker line
+      └─ else structured (default)
+        │
+        ▼
+structured: <artifact-dir>/egm/<feature-slug>/{concepts_brief,design_draft,*_report}.md
+            <artifact-dir>/egm/bootstrap/bootstrap_report.md
+flat:       <artifact-dir>/{concepts_brief,design_draft,*_report,bootstrap_report}.md
+            (auto-numbered -2, -3… inside the report's own directory)
 ```
 
 ## 10. Environment knobs
 
 | Variable | Default | Applies to |
 | --- | --- | --- |
-| `EGM_ARTIFACT_DIR` | working directory | Where briefs, drafts, and reports are written (§9). |
+| `EGM_ARTIFACT_LAYOUT` | `structured` | Artifact arrangement (§9): `structured` or `flat`. |
+| `EGM_ARTIFACT_DIR` | working directory | Artifact root directory (§9). |
 | `EGM_GOLDFISH_TIMEOUT_MS` | `900000` | Per-reviewer child timeout (§4). |
 | `EGM_GOLDFISH_MAX_CONCURRENT` | `3` | Max simultaneous reviewer children (§4). |
 | `EGM_BOOTSTRAP_TIMEOUT_MS` | `900000` | Per-worker child timeout (§6). |

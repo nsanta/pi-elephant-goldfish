@@ -12,7 +12,7 @@ This package ports the **Elephant-Goldfish Model (EGM)** plugin to the
 
 | Path here | Vendored from upstream | Modifications |
 |---|---|---|
-| `skills/` | `skills/` | Scripted, minimal substitutions only (see `scripts/adapt-pi.mjs`) |
+| `skills/` | `skills/` | Scripted, minimal substitutions only (see `scripts/adapt-pi.mjs`; the injected Pi header also carries the structured artifact-layout contract — `EGM_ARTIFACT_LAYOUT` has no upstream counterpart) |
 | `agents/` | `agents/` | None |
 | `resources/` | `resources/` | None |
 | `docs/pi.md` | — (new) | Pi harness documentation |
