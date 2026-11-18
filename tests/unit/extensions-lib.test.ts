@@ -27,7 +27,12 @@ import {
   stripRecommendedMarker,
 } from "../../extensions/lib/ask-options.ts";
 import { PACKAGE_ROOT, resolvePersona, resolveStandard } from "../../extensions/lib/paths.ts";
-import { resolveArtifactDir } from "../../extensions/lib/artifact-dir.ts";
+import {
+  normalizeFeatureSlug,
+  resolveArtifactDir,
+  resolveArtifactLayout,
+  resolveArtifactPath,
+} from "../../extensions/lib/artifact-dir.ts";
 import {
   EGM_SKILL_COMMANDS,
   buildCommandPayload,
@@ -307,6 +312,147 @@ describe("resolveArtifactDir", () => {
     } finally {
       rmSync(ws, { recursive: true, force: true });
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// artifact-dir.ts — structured artifact layout (resolveArtifactLayout,
+// normalizeFeatureSlug, resolveArtifactPath)
+// ---------------------------------------------------------------------------
+
+describe("resolveArtifactPath (structured layout)", () => {
+  const savedDir = process.env.EGM_ARTIFACT_DIR;
+  const savedLayout = process.env.EGM_ARTIFACT_LAYOUT;
+
+  afterEach(() => {
+    if (savedDir === undefined) delete process.env.EGM_ARTIFACT_DIR;
+    else process.env.EGM_ARTIFACT_DIR = savedDir;
+    if (savedLayout === undefined) delete process.env.EGM_ARTIFACT_LAYOUT;
+    else process.env.EGM_ARTIFACT_LAYOUT = savedLayout;
+  });
+
+  function makeWorkspace(): string {
+    const ws = mkdtempSync(path.join(os.tmpdir(), "egm-layout-ws-"));
+    delete process.env.EGM_ARTIFACT_DIR;
+    delete process.env.EGM_ARTIFACT_LAYOUT;
+    return ws;
+  }
+
+  it("defaults to structured: feature artifacts land under <artifact-dir>/egm/<slug>/ and the directory is created", () => {
+    const ws = makeWorkspace();
+    try {
+      const p = resolveArtifactPath(ws, { name: "design_draft.md", slug: "Webhook Delivery!" });
+      expect(p).toBe(path.resolve(ws, "egm", "webhook-delivery", "design_draft.md"));
+      expect(existsSync(path.resolve(ws, "egm", "webhook-delivery"))).toBe(true);
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+
+  it("EGM_ARTIFACT_LAYOUT=flat reproduces the legacy flat path (no egm/, no slug)", () => {
+    const ws = makeWorkspace();
+    process.env.EGM_ARTIFACT_LAYOUT = "flat";
+    try {
+      expect(resolveArtifactPath(ws, { name: "design_draft.md", slug: "whatever" })).toBe(
+        path.resolve(ws, "design_draft.md"),
+      );
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+
+  it("an `EGM artifact layout: flat` AGENTS.md marker is honored when env is unset", () => {
+    const ws = makeWorkspace();
+    try {
+      writeFileSync(path.join(ws, "AGENTS.md"), "EGM artifact layout: flat\n");
+      expect(resolveArtifactLayout(ws)).toBe("flat");
+      expect(resolveArtifactPath(ws, { name: "r.md", slug: "s" })).toBe(path.resolve(ws, "r.md"));
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+
+  it("the env layout wins over the AGENTS.md marker", () => {
+    const ws = makeWorkspace();
+    process.env.EGM_ARTIFACT_LAYOUT = "structured";
+    try {
+      writeFileSync(path.join(ws, "AGENTS.md"), "EGM artifact layout: flat\n");
+      expect(resolveArtifactLayout(ws)).toBe("structured");
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+
+  it("an unrecognized layout value is skipped, letting a recognized marker decide", () => {
+    const ws = makeWorkspace();
+    process.env.EGM_ARTIFACT_LAYOUT = "fancy";
+    try {
+      writeFileSync(path.join(ws, "AGENTS.md"), "EGM artifact layout: flat\n");
+      expect(resolveArtifactLayout(ws)).toBe("flat");
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+
+  it("with no recognized config anywhere, the layout resolves to structured", () => {
+    const ws = makeWorkspace();
+    try {
+      expect(resolveArtifactLayout(ws)).toBe("structured");
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+
+  it("bootstrap kind lands under egm/bootstrap regardless of slug", () => {
+    const ws = makeWorkspace();
+    try {
+      const p = resolveArtifactPath(ws, { name: "bootstrap_report.md", kind: "bootstrap", slug: "ignored" });
+      expect(p).toBe(path.resolve(ws, "egm", "bootstrap", "bootstrap_report.md"));
+      expect(existsSync(path.resolve(ws, "egm", "bootstrap"))).toBe(true);
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+
+  it("bootstrap kind in flat mode stays flat", () => {
+    const ws = makeWorkspace();
+    process.env.EGM_ARTIFACT_LAYOUT = "flat";
+    try {
+      expect(resolveArtifactPath(ws, { name: "bootstrap_report.md", kind: "bootstrap" })).toBe(
+        path.resolve(ws, "bootstrap_report.md"),
+      );
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+
+  it("a missing slug falls back to 'design' in structured mode", () => {
+    const ws = makeWorkspace();
+    try {
+      expect(resolveArtifactPath(ws, { name: "concepts_brief.md" })).toBe(
+        path.resolve(ws, "egm", "design", "concepts_brief.md"),
+      );
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("normalizeFeatureSlug", () => {
+  it("kebab-cases mixed case, punctuation, and repeated separators", () => {
+    expect(normalizeFeatureSlug("Webhook Delivery!")).toBe("webhook-delivery");
+    expect(normalizeFeatureSlug("  Foo__Bar  ")).toBe("foo-bar");
+    expect(normalizeFeatureSlug("a---b")).toBe("a-b");
+  });
+
+  it("caps length at 64 characters and never ends with a dash", () => {
+    expect(normalizeFeatureSlug("x".repeat(80))).toHaveLength(64);
+    expect(normalizeFeatureSlug(`edge-${"y".repeat(80)}`)).not.toMatch(/-$/);
+  });
+
+  it("falls back to 'design' for empty or non-alphanumeric input", () => {
+    expect(normalizeFeatureSlug("")).toBe("design");
+    expect(normalizeFeatureSlug("!!!")).toBe("design");
   });
 });
 
