@@ -96,6 +96,27 @@ describe("adaptation invariants", () => {
       expect(content, `skills/${dir}/SKILL.md does not mention docs/pi.md`).toContain("docs/pi.md");
     }
   });
+
+  it("every skill carries the structured-layout header (with the flat escape hatch)", () => {
+    for (const dir of skillDirs()) {
+      const content = readFileSync(path.join(SKILLS_DIR, dir, "SKILL.md"), "utf8");
+      expect(content, `skills/${dir}/SKILL.md lacks EGM_ARTIFACT_LAYOUT guidance`).toContain(
+        "EGM_ARTIFACT_LAYOUT",
+      );
+      if (dir === "egm-bootstrap") {
+        expect(content, `skills/${dir}/SKILL.md lacks the bootstrap report destination`).toContain(
+          "egm/bootstrap",
+        );
+      } else {
+        expect(content, `skills/${dir}/SKILL.md lacks the egm/<feature-slug> guidance`).toContain(
+          "egm/<feature-slug>",
+        );
+        expect(content, `skills/${dir}/SKILL.md lacks the slug-parameter guidance`).toContain(
+          "`slug`",
+        );
+      }
+    }
+  });
 });
 
 describe.skipIf(!upstreamCloneExists)(

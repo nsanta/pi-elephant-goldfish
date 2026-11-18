@@ -8,7 +8,7 @@
  * upstream drift is detected instead of silently shipping un-adapted content.
  *
  * Substitutions:
- *   1. Harness header  -> point Pi users at docs/pi.md
+ *   1. Harness header  -> point Pi users at docs/pi.md + artifact-layout contract
  *   2. Delegation block -> egm_goldfish / egm_ask contract (skills that spawn)
  *   3. ask_question     -> egm_ask (gate tool name)
  *   4. Plugin-root paths (agents/, resources/) -> skill-relative ../../ paths
@@ -41,8 +41,31 @@ function sub(content, pattern, replacement, label, file, expectedMin = 1) {
   return [out, count];
 }
 
-const PI_HEADER =
-  "When running in Pi, first read the Pi harness guide at `../../docs/pi.md` before using this skill.";
+const FLAT_ESCAPE_HATCH =
+  "Setting `EGM_ARTIFACT_LAYOUT=flat` (environment variable, or an `EGM artifact layout: flat` line in AGENTS.md/CLAUDE.md) restores the legacy flat layout: write artifacts directly in the artifact directory.";
+
+function piHeader(file) {
+  const pointer =
+    "When running in Pi, first read the Pi harness guide at `../../docs/pi.md` before using this skill.";
+  if (file.includes("bootstrap")) {
+    return (
+      `${pointer} EGM uses a structured artifact layout by default: the ` +
+      "`egm_bootstrap` tool files its own report automatically (structured default: " +
+      "`<artifact-dir>/egm/bootstrap/`; the contract README.md files themselves are written " +
+      "in the target tree as before). Setting `EGM_ARTIFACT_LAYOUT=flat` (environment variable, " +
+      "or an `EGM artifact layout: flat` line in AGENTS.md/CLAUDE.md) keeps the report in " +
+      "the artifact directory root."
+    );
+  }
+  return (
+    `${pointer} EGM uses a structured artifact layout by default: write each design's ` +
+    "lifecycle artifacts (concepts_brief.md, design_draft.md, and every report file) into " +
+    "`<artifact-dir>/egm/<feature-slug>/`, where `<feature-slug>` is a short kebab-case name " +
+    "for the design (agree on it with the user at the first gate, then reuse it for every " +
+    "artifact of the same design); pass the same value as `egm_goldfish`'s `slug` parameter " +
+    `so tool-written reports land in the same directory. ${FLAT_ESCAPE_HATCH}`
+  );
+}
 
 // Upstream delegation block: starts identically in every spawning skill; ends
 // with either the review-stop sentence or the bootstrap inline-scout sentence.
@@ -80,7 +103,7 @@ for (const dir of skillDirs) {
   [content, counts.header] = sub(
     content,
     /When running in Codex or ChatGPT Work[\s\S]*?first\./,
-    PI_HEADER,
+    piHeader(dir),
     "harness header",
     file,
   );

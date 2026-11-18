@@ -11,7 +11,7 @@ description: >-
 
 # Detect Drift In Designs and Code
 
-When running in Pi, first read the Pi harness guide at `../../docs/pi.md` before using this skill.
+When running in Pi, first read the Pi harness guide at `../../docs/pi.md` before using this skill. EGM uses a structured artifact layout by default: write each design's lifecycle artifacts (concepts_brief.md, design_draft.md, and every report file) into `<artifact-dir>/egm/<feature-slug>/`, where `<feature-slug>` is a short kebab-case name for the design (agree on it with the user at the first gate, then reuse it for every artifact of the same design); pass the same value as `egm_goldfish`'s `slug` parameter so tool-written reports land in the same directory. Setting `EGM_ARTIFACT_LAYOUT=flat` (environment variable, or an `EGM artifact layout: flat` line in AGENTS.md/CLAUDE.md) restores the legacy flat layout: write artifacts directly in the artifact directory.
 
 When the user asks to detect drift across all designs or a set of READMEs, the
 goal is to identify all instances where the codebase has diverged or failed to

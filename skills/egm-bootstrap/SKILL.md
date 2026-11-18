@@ -7,7 +7,7 @@ description: Bootstrap directory README.md files across a repository subtree.
 
 # EGM Peanuts and Hay Bootstrap (`egm-bootstrap`)
 
-When running in Pi, first read the Pi harness guide at `../../docs/pi.md` before using this skill.
+When running in Pi, first read the Pi harness guide at `../../docs/pi.md` before using this skill. EGM uses a structured artifact layout by default: the `egm_bootstrap` tool files its own report automatically (structured default: `<artifact-dir>/egm/bootstrap/`; the contract README.md files themselves are written in the target tree as before). Setting `EGM_ARTIFACT_LAYOUT=flat` (environment variable, or an `EGM artifact layout: flat` line in AGENTS.md/CLAUDE.md) keeps the report in the artifact directory root.
 
 ## Overview
 
