@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Update Plan — Artifact Generation System</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Pinned file://-safe UMD CDNs -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f8f8f6;
+      --surface: #ffffff;
+      --surface-muted: #f0efe9;
+      --border: #e2e0d8;
+      --text: #18181b;
+      --text-muted: #57534e;
+      --accent: #003f5c;
+      --accent-fg: #ffffff;
+      --grid-line: rgba(120, 113, 108, 0.18);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+
+    .card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      transition: background-color 160ms ease, border-color 160ms ease;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      background-color: var(--surface-muted);
+      color: var(--text);
+      cursor: pointer;
+      transition: opacity 120ms ease, border-color 120ms ease;
+    }
+    .btn:hover { opacity: 0.85; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 0.15rem 0.55rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: var(--surface-muted);
+      color: var(--text-muted);
+    }
+
+    .diagram-stage {
+      background-color: var(--surface-muted);
+      background-image: radial-gradient(var(--border) 1px, transparent 1px);
+      background-size: 16px 16px;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+    }
+
+    table.plain { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    table.plain th, table.plain td {
+      text-align: left; vertical-align: top;
+      padding: 0.55rem 0.65rem;
+      border-bottom: 1px solid var(--border);
+    }
+    table.plain th { font-weight: 600; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    table.plain tr:last-child td { border-bottom: none; }
+    table.plain code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.75rem;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 0.25rem;
+      padding: 0.05rem 0.3rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased">
+
+  <!-- Sticky Header -->
+  <header class="sticky top-0 z-20 border-b backdrop-blur-md" style="border-color: var(--border); background: color-mix(in srgb, var(--surface) 88%, transparent);">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-base font-semibold tracking-tight truncate">Project Update Plan</h1>
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full" style="background: var(--surface-muted); color: var(--text-muted); border: 1px solid var(--border);">
+            For Review — Pre-Implementation
+          </span>
+        </div>
+        <p class="text-xs truncate" style="color: var(--text-muted);">Adopt the artifact generation system (update.md) into pi-elephant-goldfish · 2026-11-20</p>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <select id="palette-select" aria-label="Color palette" class="btn pr-6 outline-none">
+          <option value="dusk">Dusk Spectrum</option>
+          <option value="editorial">Editorial Paper</option>
+          <option value="nordic">Nordic Mineral</option>
+          <option value="okabe">Okabe-Ito Refined</option>
+          <option value="botanical">Botanical Ink</option>
+        </select>
+
+        <button id="theme-toggle" class="btn" title="Toggle light/dark mode">
+          <i id="theme-icon" data-lucide="moon" class="w-3.5 h-3.5"></i>
+          <span id="theme-label">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl mx-auto p-6 space-y-6">
+
+    <!-- KPI Row -->
+    <section class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: var(--text-muted);">Workstreams</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums mt-1">4</p>
+        <p class="text-xs mt-1" style="color: var(--text-muted);">3 core + 1 optional</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: var(--text-muted);">Est. Core Effort</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums mt-1">~2–3 h</p>
+        <p class="text-xs mt-1" style="color: var(--text-muted);">P4 optional adds ~1–2 h</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: var(--text-muted);">Files Touched</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums mt-1">3–4</p>
+        <p class="text-xs mt-1" style="color: var(--text-muted);">all additive, none load-bearing</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: var(--text-muted);">Risk</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums mt-1">Low</p>
+        <p class="text-xs mt-1" style="color: var(--text-muted);">no package code paths change</p>
+      </div>
+    </section>
+
+    <!-- Goal -->
+    <section class="card p-5">
+      <div class="flex items-start gap-3">
+        <i data-lucide="target" class="w-5 h-5 mt-0.5 shrink-0" style="color: var(--accent);"></i>
+        <div class="space-y-2">
+          <h2 class="text-sm font-semibold">Goal — give every future plan a friendly, visual review surface</h2>
+          <p class="text-sm" style="color: var(--text-muted);">
+            Adopt the artifact system described in <code>update.md</code>: a single-file HTML design system
+            (<code>artifacts/_template.html</code>) plus agent rules, so that plans, dashboards, and reviews are
+            generated as self-contained HTML artifacts you can open and review in the browser — like this one.
+            Markdown stays the source of truth; HTML is the human-facing projection.
+          </p>
+          <ul class="text-sm space-y-1.5" style="color: var(--text-muted);">
+            <li class="flex items-start gap-2"><i data-lucide="check" class="w-3.5 h-3.5 mt-0.5 shrink-0" style="color: var(--accent);"></i>Plans become reviewable dashboards (charts, diagrams, decision tables) instead of walls of prose.</li>
+            <li class="flex items-start gap-2"><i data-lucide="check" class="w-3.5 h-3.5 mt-0.5 shrink-0" style="color: var(--accent);"></i>One design system: five palettes, light/dark, Chart.js + Mermaid theming that stays consistent across artifacts.</li>
+            <li class="flex items-start gap-2"><i data-lucide="check" class="w-3.5 h-3.5 mt-0.5 shrink-0" style="color: var(--accent);"></i>Fits this repo's artifact-first culture: files over chat, human gates before implementation.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Effort Chart + Adoption Flow -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Chart.js Card -->
+      <div class="card p-5 flex flex-col">
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="text-sm font-semibold">Estimated Effort by Phase</h2>
+            <p class="text-xs" style="color: var(--text-muted);">Rough estimates for review — not commitments</p>
+          </div>
+          <span class="pill">Estimates</span>
+        </div>
+        <div class="relative h-72 w-full">
+          <canvas id="sample-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Mermaid Card -->
+      <div class="card p-5 flex flex-col">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="text-sm font-semibold">Adoption Pipeline</h2>
+            <p class="text-xs" style="color: var(--text-muted);">This plan's review gate comes before implementation</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button class="btn" onclick="zoomDiagram('flow', -0.15)" title="Zoom out">
+              <i data-lucide="zoom-out" class="w-3.5 h-3.5"></i>
+            </button>
+            <button class="btn" onclick="zoomDiagram('flow', 0)" title="Reset zoom">100%</button>
+            <button class="btn" onclick="zoomDiagram('flow', 0.15)" title="Zoom in">
+              <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i>
+            </button>
+            <button class="btn" id="copy-flow-btn" onclick="copyMermaid('flow', this)">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i><span>Copy</span>
+            </button>
+            <button class="btn" onclick="downloadSvg('flow', 'adoption-pipeline.svg')">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i><span>SVG</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="diagram-stage flex-1 min-h-[18rem] overflow-auto p-4 flex items-center justify-center">
+          <div id="mermaid-flow" class="origin-center transition-transform duration-150"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Phase Cards -->
+    <section>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold">Workstreams</h2>
+        <span class="text-xs" style="color: var(--text-muted);">Phases 1–3 are core; Phase 4 is optional</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+        <div class="card p-4 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="layout-template" class="w-4 h-4" style="color: var(--accent);"></i>
+              <h3 class="text-sm font-semibold">P1 · Bootstrap</h3>
+            </div>
+            <span class="pill">Done (draft)</span>
+          </div>
+          <ul class="text-xs space-y-1.5" style="color: var(--text-muted);">
+            <li>· <code>artifacts/_template.html</code> extracted from update.md §3 (unescape pass)</li>
+            <li>· Directory <code>artifacts/</code> created; template opens over <code>file://</code></li>
+            <li>· This plan artifact generated from the template design system</li>
+          </ul>
+          <p class="text-[11px] font-mono mt-auto pt-2" style="color: var(--text-muted);">AC: template toggles 5 palettes + dark mode with no console errors</p>
+        </div>
+
+        <div class="card p-4 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="bot" class="w-4 h-4" style="color: var(--accent);"></i>
+              <h3 class="text-sm font-semibold">P2 · Agent Rules</h3>
+            </div>
+            <span class="pill">Pending approval</span>
+          </div>
+          <ul class="text-xs space-y-1.5" style="color: var(--text-muted);">
+            <li>· Recommended shape: user-global <code>~/.pi/agent/agents/artifact-forge.md</code> subagent (tools: read, write, edit, bash) carrying the full update.md §2 ruleset</li>
+            <li>· Thin repo-root <code>AGENTS.md</code> section: trigger convention — delegate generation to the subagent; edit artifacts in place for small tweaks</li>
+            <li>· Linux auto-open via <code>xdg-open</code> with headless guard</li>
+          </ul>
+          <p class="text-[11px] font-mono mt-auto pt-2" style="color: var(--text-muted);">AC: any session can delegate <code>subagent(artifact-forge)</code> and get a compliant artifact + path back</p>
+        </div>
+
+        <div class="card p-4 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="settings-2" class="w-4 h-4" style="color: var(--accent);"></i>
+              <h3 class="text-sm font-semibold">P3 · Governance</h3>
+            </div>
+            <span class="pill">Pending approval</span>
+          </div>
+          <ul class="text-xs space-y-1.5" style="color: var(--text-muted);">
+            <li>· Decide git policy for <code>artifacts/*.html</code> (see Settings table)</li>
+            <li>· Delete one-off <code>scripts/extract-template.mjs</code></li>
+            <li>· Archive or delete <code>update.md</code> once content has migrated</li>
+          </ul>
+          <p class="text-[11px] font-mono mt-auto pt-2" style="color: var(--text-muted);">AC: template is protected; one-off tooling removed; repo status clean</p>
+        </div>
+
+        <div class="card p-4 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="git-branch" class="w-4 h-4" style="color: var(--accent);"></i>
+              <h3 class="text-sm font-semibold">P4 · Enhancements</h3>
+            </div>
+            <span class="pill">Optional</span>
+          </div>
+          <ul class="text-xs space-y-1.5" style="color: var(--text-muted);">
+            <li>· <code>artifacts/index.html</code> gallery, auto-regenerated on each artifact save</li>
+            <li>· EGM projection: render design drafts / review reports as HTML dashboards</li>
+            <li>· Long-term: standalone pi package (skill + agent installer) so other machines/users get the subagent — packages can't ship agents directly</li>
+          </ul>
+          <p class="text-[11px] font-mono mt-auto pt-2" style="color: var(--text-muted);">AC: each item is independently shippable; defer until core lands</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Settings + Markdown/HTML tables -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Settings -->
+      <div class="card p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4" style="color: var(--accent);"></i>
+          <h2 class="text-sm font-semibold">Settings — Recommended Configuration</h2>
+        </div>
+        <table class="plain">
+          <thead>
+            <tr><th>Setting</th><th>Recommendation</th><th>Alternatives</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="font-medium">Delivery shape</td>
+              <td>Hybrid: user-global <code>artifact-forge</code> subagent does generation; thin <code>AGENTS.md</code> rule handles triggering + small edits</td>
+              <td>All-inline <code>AGENTS.md</code> rules (simplest); package skill (shippable, but not context-isolated)</td>
+            </tr>
+            <tr>
+              <td class="font-medium">Template</td>
+              <td><code>artifacts/_template.html</code>, versioned in git — it is the design contract</td>
+              <td>Gitignore it and keep in update.md only (weaker)</td>
+            </tr>
+            <tr>
+              <td class="font-medium">Generated artifacts</td>
+              <td>Version them — they are review records, matching this repo's artifact-first style</td>
+              <td>Gitignore <code>artifacts/*.html</code> with <code>!artifacts/_template.html</code> exception if they accumulate</td>
+            </tr>
+            <tr>
+              <td class="font-medium">Default palette</td>
+              <td><code>dusk</code> (spec default); override per artifact via prompt</td>
+              <td><code>nordic</code> suits architecture/engineering docs</td>
+            </tr>
+            <tr>
+              <td class="font-medium">Default mode</td>
+              <td>Light, with persistent toggle</td>
+              <td>Dark-first if you review mostly at night</td>
+            </tr>
+            <tr>
+              <td class="font-medium">Auto-open (Linux)</td>
+              <td><code>command -v xdg-open >/dev/null && xdg-open "&lt;file&gt;" || true</code> — headless-safe</td>
+              <td>Skip auto-open; open manually</td>
+            </tr>
+            <tr>
+              <td class="font-medium">CDN pinning</td>
+              <td>Keep pinned UMD builds; artifacts still need network for CDNs</td>
+              <td>Inline/vendor libs for fully offline artifacts (heavier files)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Markdown vs HTML -->
+      <div class="card p-5 flex flex-col">
+        <div class="flex items-center gap-2 mb-3">
+          <i data-lucide="split" class="w-4 h-4" style="color: var(--accent);"></i>
+          <h2 class="text-sm font-semibold">Markdown vs HTML — What Lives Where</h2>
+        </div>
+        <table class="plain">
+          <thead>
+            <tr><th>Content</th><th>Home</th><th>Why</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="font-medium">Agent rules</td>
+              <td><code>AGENTS.md</code> (markdown)</td>
+              <td>Agents parse markdown; it must diff cleanly and load as context</td>
+            </tr>
+            <tr>
+              <td class="font-medium">Plan of record (tasks, AC)</td>
+              <td>Markdown</td>
+              <td>Greppable, diffable, survives review loops</td>
+            </tr>
+            <tr>
+              <td class="font-medium">EGM briefs / drafts / reports</td>
+              <td>Markdown</td>
+              <td>Already artifact-first in this repo; Goldfish reviewers read markdown</td>
+            </tr>
+            <tr>
+              <td class="font-medium">Design system / template</td>
+              <td>HTML (<code>_template.html</code>)</td>
+              <td>It <em>is</em> the visual system — markdown cannot express it</td>
+            </tr>
+            <tr>
+              <td class="font-medium">Plan review artifacts, dashboards</td>
+              <td>HTML (generated)</td>
+              <td>Charts, diagrams, toggles — friendlier human review</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 mt-4 mb-2">
+          <p class="text-xs" style="color: var(--text-muted);">Single-writer rule: markdown feeds HTML, never the reverse.</p>
+          <div class="flex items-center gap-1.5">
+            <button class="btn" onclick="zoomDiagram('split', -0.15)"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
+            <button class="btn" onclick="zoomDiagram('split', 0)">100%</button>
+            <button class="btn" onclick="zoomDiagram('split', 0.15)"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
+            <button class="btn" onclick="downloadSvg('split', 'projection-flow.svg')"><i data-lucide="download" class="w-3.5 h-3.5"></i><span>SVG</span></button>
+          </div>
+        </div>
+        <div class="diagram-stage min-h-[10rem] overflow-auto p-3 flex items-center justify-center">
+          <div id="mermaid-split" class="origin-center transition-transform duration-150"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Open Decisions -->
+    <section>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold">Open Decisions — Your Review Gate</h2>
+        <span class="pill"><i data-lucide="circle-help" class="w-3 h-3"></i>5 decisions</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+
+        <div class="card p-4">
+          <p class="text-xs font-mono mb-1" style="color: var(--text-muted);">D1 · Scope</p>
+          <p class="text-sm font-medium mb-1.5">Is this update only the artifact system?</p>
+          <p class="text-xs" style="color: var(--text-muted);">If pending release work (e.g., publishing the repo for <code>pi install</code> Option A) belongs in this update too, it should be added as a workstream now.</p>
+        </div>
+
+        <div class="card p-4">
+          <p class="text-xs font-mono mb-1" style="color: var(--text-muted);">D2 · Phases</p>
+          <p class="text-sm font-medium mb-1.5">Approve P1–P3 now, defer P4?</p>
+          <p class="text-xs" style="color: var(--text-muted);">Recommended. P4 items are nice-to-have and independently shippable later.</p>
+        </div>
+
+        <div class="card p-4">
+          <p class="text-xs font-mono mb-1" style="color: var(--text-muted);">D3 · Delivery shape</p>
+          <p class="text-sm font-medium mb-1.5">Subagent vs inline rules vs hybrid?</p>
+          <p class="text-xs" style="color: var(--text-muted);">Recommended: hybrid — a user-global <code>artifact-forge</code> subagent keeps generation context-isolated and reusable from any project; a thin <code>AGENTS.md</code> rule stays for triggering and small edits. Packages can't ship agents, so cross-machine sharing is a P4 package.</p>
+        </div>
+
+        <div class="card p-4">
+          <p class="text-xs font-mono mb-1" style="color: var(--text-muted);">D4 · Git policy</p>
+          <p class="text-sm font-medium mb-1.5">Version generated artifacts or gitignore them?</p>
+          <p class="text-xs" style="color: var(--text-muted);">Recommended: version (review records). Switch to gitignore if artifacts start accumulating noise.</p>
+        </div>
+
+        <div class="card p-4">
+          <p class="text-xs font-mono mb-1" style="color: var(--text-muted);">D5 · Defaults</p>
+          <p class="text-sm font-medium mb-1.5">Palette + mode defaults</p>
+          <p class="text-xs" style="color: var(--text-muted);">Recommended: <code>dusk</code> + light (spec defaults), per-artifact override via prompt.</p>
+        </div>
+
+        <div class="card p-4 flex flex-col justify-center items-start gap-2" style="border-style: dashed;">
+          <p class="text-xs font-mono" style="color: var(--text-muted);">How to approve</p>
+          <p class="text-xs" style="color: var(--text-muted);">Reply with decision letters (e.g., "D1: artifact system only · D2: approve · D3: AGENTS.md · D4: version · D5: defaults ok") — implementation starts after the gate.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <p class="text-xs text-center pb-2" style="color: var(--text-muted);">
+      Generated from <code>update.md</code> · Markdown remains the source of truth — this artifact is a projection for review.
+    </p>
+  </main>
+
+  <script>
+    /* ============================================================
+     * 1. DESIGN SYSTEM & PALETTE REGISTRY (from _template.html)
+     * ============================================================ */
+    const DEFAULT_PALETTE = 'dusk'; // dusk | editorial | nordic | okabe | botanical
+    const DEFAULT_MODE = 'light';   // light | dark
+
+    const THEMES = {
+      dusk: {
+        name: 'Dusk Spectrum',
+        light: {
+          bg: '#f8f8f6', surface: '#ffffff', surfaceMuted: '#f0efe9', border: '#e2e0d8',
+          text: '#18181b', textMuted: '#57534e', accent: '#003f5c', gridLine: 'rgba(120,113,108,0.18)',
+          mermaidFill: '#eef4f7', mermaidSecondary: '#f6f3f9',
+          series: ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600']
+        },
+        dark: {
+          bg: '#18181a', surface: '#222225', surfaceMuted: '#2c2c30', border: '#36363b',
+          text: '#f4f4f5', textMuted: '#a1a1aa', accent: '#ff6361', gridLine: 'rgba(161,161,170,0.16)',
+          mermaidFill: '#1e2c35', mermaidSecondary: '#2a2738',
+          series: ['#2c7da0', '#847cc4', '#d46ca9', '#ff7b79', '#ffb733']
+        }
+      },
+      editorial: {
+        name: 'Editorial Paper',
+        light: {
+          bg: '#faf8f5', surface: '#ffffff', surfaceMuted: '#f2eee7', border: '#e5dfd3',
+          text: '#1c1917', textMuted: '#635c55', accent: '#1b4965', gridLine: 'rgba(99,92,85,0.16)',
+          mermaidFill: '#edf4f8', mermaidSecondary: '#fbf3ef',
+          series: ['#1b4965', '#5fa8d3', '#3d8b7d', '#e07a5f', '#e9b85b']
+        },
+        dark: {
+          bg: '#1c1a17', surface: '#26231f', surfaceMuted: '#302c27', border: '#3d3832',
+          text: '#f5f2ec', textMuted: '#a8a29e', accent: '#e07a5f', gridLine: 'rgba(168,162,158,0.15)',
+          mermaidFill: '#1f303c', mermaidSecondary: '#362823',
+          series: ['#4a8bb2', '#7cc0e6', '#56b0a0', '#ea9279', '#f0c774']
+        }
+      },
+      nordic: {
+        name: 'Nordic Mineral',
+        light: {
+          bg: '#f6f8f9', surface: '#ffffff', surfaceMuted: '#ebf0f2', border: '#dce4e8',
+          text: '#142026', textMuted: '#586b75', accent: '#264653', gridLine: 'rgba(88,107,117,0.16)',
+          mermaidFill: '#eaf1f3', mermaidSecondary: '#edf6f5',
+          series: ['#264653', '#457b9d', '#2a9d8f', '#d98c5f', '#9b6a82']
+        },
+        dark: {
+          bg: '#14181c', surface: '#1d2329', surfaceMuted: '#262e36', border: '#323d47',
+          text: '#eef2f5', textMuted: '#94a6b3', accent: '#2a9d8f', gridLine: 'rgba(148,166,179,0.15)',
+          mermaidFill: '#1d2f36', mermaidSecondary: '#1c3330',
+          series: ['#4e7d91', '#6ba0c2', '#42baa9', '#e6a37c', '#ba89a1']
+        }
+      },
+      okabe: {
+        name: 'Okabe-Ito Refined',
+        light: {
+          bg: '#fafafa', surface: '#ffffff', surfaceMuted: '#f0f0f2', border: '#e1e1e6',
+          text: '#141417', textMuted: '#5c5c66', accent: '#0072b2', gridLine: 'rgba(92,92,102,0.16)',
+          mermaidFill: '#ebf4fa', mermaidSecondary: '#eaf7f3',
+          series: ['#0072b2', '#009e73', '#e69f00', '#cc79a7', '#d55e00']
+        },
+        dark: {
+          bg: '#161618', surface: '#202024', surfaceMuted: '#2a2a30', border: '#36363e',
+          text: '#f4f4f7', textMuted: '#a0a0ad', accent: '#38a1db', gridLine: 'rgba(160,160,173,0.15)',
+          mermaidFill: '#172d3b', mermaidSecondary: '#16332b',
+          series: ['#38a1db', '#2bc299', '#f5b324', '#de93bd', '#f07b26']
+        }
+      },
+      botanical: {
+        name: 'Botanical Ink',
+        light: {
+          bg: '#f8f9fa', surface: '#ffffff', surfaceMuted: '#eef1f0', border: '#dde3e1',
+          text: '#161d1b', textMuted: '#566360', accent: '#1f6f78', gridLine: 'rgba(86,99,96,0.16)',
+          mermaidFill: '#eaf4f5', mermaidSecondary: '#f1f0f8',
+          series: ['#1f6f78', '#6c63a6', '#5b8c5a', '#d4a03c', '#d1603d']
+        },
+        dark: {
+          bg: '#141518', surface: '#1e2024', surfaceMuted: '#272a30', border: '#343840',
+          text: '#f1f3f5', textMuted: '#9aa3ad', accent: '#3ca3ae', gridLine: 'rgba(154,163,173,0.15)',
+          mermaidFill: '#1a2f33', mermaidSecondary: '#272438',
+          series: ['#3ca3ae', '#8f87c9', '#7bb079', '#e5b657', '#e37e5e']
+        }
+      }
+    };
+
+    const state = {
+      palette: localStorage.getItem('artifact-palette') || DEFAULT_PALETTE,
+      mode: localStorage.getItem('artifact-mode') || DEFAULT_MODE,
+      zoom: { flow: 1, split: 1 }
+    };
+
+    if (!THEMES[state.palette]) state.palette = DEFAULT_PALETTE;
+
+    function getActiveTheme() {
+      return THEMES[state.palette][state.mode];
+    }
+
+    /* ============================================================
+     * 2. MERMAID DIAGRAMS & CONTROLS
+     * ============================================================ */
+    const MERMAID_DIAGRAMS = {
+      flow: `
+        flowchart TD
+          A["update.md spec"] --> B["P1 · Bootstrap<br/>artifacts/_template.html"]
+          B --> C["P2 · Agent rules<br/>AGENTS.md"]
+          C --> D["P3 · Governance<br/>git policy + cleanup"]
+          D --> E{"Review gate<br/>(this artifact)"}
+          E -->|"approve"| F["Generate artifacts<br/>./artifacts/*.html"]
+          E -->|"adjust"| B
+          F --> G["Auto-open<br/>xdg-open"]
+      `,
+      split: `
+        flowchart LR
+          M["Markdown<br/>AGENTS.md · plan · EGM docs"] -->|"agent reads"| H["HTML artifact<br/>artifacts/*.html"]
+          H -->|"human reviews"| U{{"You"}}
+          U -->|"feedback"| M
+          H -.->|"never edits back"| M
+      `
+    };
+
+    async function renderAllMermaid() {
+      if (typeof mermaid === 'undefined') return;
+      const t = getActiveTheme();
+
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        securityLevel: 'loose',
+        themeVariables: {
+          fontFamily: 'Inter, system-ui, sans-serif',
+          fontSize: '13px',
+          primaryColor: t.mermaidFill,
+          primaryTextColor: t.text,
+          primaryBorderColor: t.series[0],
+          secondaryColor: t.mermaidSecondary,
+          secondaryTextColor: t.text,
+          secondaryBorderColor: t.series[1],
+          tertiaryColor: t.surfaceMuted,
+          tertiaryTextColor: t.text,
+          tertiaryBorderColor: t.series[4],
+          lineColor: t.textMuted,
+          textColor: t.text,
+          edgeLabelBackground: t.surface,
+          clusterBkg: t.surface,
+          clusterBorder: t.border
+        }
+      });
+
+      for (const [id, src] of Object.entries(MERMAID_DIAGRAMS)) {
+        const el = document.getElementById(`mermaid-${id}`);
+        if (!el) continue;
+        const { svg } = await mermaid.render(`svg-${id}-${Date.now()}`, src.trim());
+        el.innerHTML = svg;
+      }
+    }
+
+    function zoomDiagram(id, delta) {
+      state.zoom[id] = delta === 0 ? 1 : Math.min(2.2, Math.max(0.5, (state.zoom[id] || 1) + delta));
+      const el = document.getElementById(`mermaid-${id}`);
+      if (el) el.style.transform = `scale(${state.zoom[id]})`;
+    }
+
+    async function copyMermaid(id, btn) {
+      const src = MERMAID_DIAGRAMS[id]?.trim();
+      if (!src) return;
+      await navigator.clipboard.writeText(src);
+      const label = btn.querySelector('span');
+      const prev = label.textContent;
+      label.textContent = 'Copied';
+      setTimeout(() => (label.textContent = prev), 1200);
+    }
+
+    function downloadSvg(id, filename) {
+      const svg = document.querySelector(`#mermaid-${id} svg`);
+      if (!svg) return;
+      const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ============================================================
+     * 3. CHART.JS REGISTRY & DYNAMIC RE-THEMING
+     * ============================================================ */
+    const charts = [];
+
+    function initCharts() {
+      const t = getActiveTheme();
+      const ctx = document.getElementById('sample-chart');
+      if (!ctx || typeof Chart === 'undefined') return;
+
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['P1 · Bootstrap', 'P2 · Rules', 'P3 · Governance', 'P4 · Enhancements'],
+          datasets: [
+            {
+              label: 'Estimated effort (hours)',
+              data: [0.5, 0.75, 0.5, 1.5],
+              _colorIdx: 0,
+              backgroundColor: t.series[0],
+              borderRadius: 6
+            },
+            {
+              label: '…of which optional',
+              data: [0, 0, 0, 1.5],
+              _colorIdx: 2,
+              backgroundColor: t.series[2],
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: t.textMuted, boxWidth: 12, usePointStyle: true } },
+            tooltip: { backgroundColor: t.surface, titleColor: t.text, bodyColor: t.textMuted, borderColor: t.border, borderWidth: 1 }
+          },
+          scales: {
+            x: { ticks: { color: t.textMuted }, grid: { display: false } },
+            y: { ticks: { color: t.textMuted }, grid: { color: t.gridLine }, border: { display: false }, beginAtZero: true }
+          }
+        }
+      });
+
+      charts.push(chart);
+    }
+
+    function updateChartsTheme() {
+      const t = getActiveTheme();
+      charts.forEach((chart) => {
+        chart.data.datasets.forEach((ds, i) => {
+          const idx = ds._colorIdx ?? (i % t.series.length);
+          const color = t.series[idx % t.series.length];
+          if (Array.isArray(ds.backgroundColor)) {
+            ds.backgroundColor = ds.data.map((_, j) => t.series[j % t.series.length]);
+          } else {
+            ds.backgroundColor = color;
+          }
+          if (ds.borderColor) ds.borderColor = color;
+        });
+
+        if (chart.options.scales) {
+          Object.values(chart.options.scales).forEach((scale) => {
+            if (scale.ticks) scale.ticks.color = t.textMuted;
+            if (scale.grid && scale.grid.display !== false) scale.grid.color = t.gridLine;
+          });
+        }
+        if (chart.options.plugins?.legend?.labels) {
+          chart.options.plugins.legend.labels.color = t.textMuted;
+        }
+        if (chart.options.plugins?.tooltip) {
+          Object.assign(chart.options.plugins.tooltip, {
+            backgroundColor: t.surface, titleColor: t.text, bodyColor: t.textMuted, borderColor: t.border
+          });
+        }
+        chart.update('none');
+      });
+    }
+
+    /* ============================================================
+     * 4. APPLY THEME & BIND UI CONTROLS
+     * ============================================================ */
+    function renderSwatchStrip() {
+      const t = getActiveTheme();
+      const strip = document.getElementById('swatch-strip');
+      const label = document.getElementById('swatch-label');
+      if (!strip) return;
+      strip.innerHTML = t.series.map((hex) =>
+        `<span title="${hex}" class="h-5 flex-1 rounded" style="background:${hex}"></span>`
+      ).join('');
+      if (label) label.textContent = `${THEMES[state.palette].name} (${state.mode})`;
+    }
+
+    function applyTheme() {
+      const t = getActiveTheme();
+      const root = document.documentElement;
+      root.setAttribute('data-theme', state.mode);
+
+      const vars = {
+        '--bg': t.bg,
+        '--surface': t.surface,
+        '--surface-muted': t.surfaceMuted,
+        '--border': t.border,
+        '--text': t.text,
+        '--text-muted': t.textMuted,
+        '--accent': t.accent,
+        '--grid-line': t.gridLine
+      };
+      Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+      localStorage.setItem('artifact-palette', state.palette);
+      localStorage.setItem('artifact-mode', state.mode);
+
+      const paletteSelect = document.getElementById('palette-select');
+      if (paletteSelect) paletteSelect.value = state.palette;
+      const themeLabel = document.getElementById('theme-label');
+      if (themeLabel) themeLabel.textContent = state.mode === 'dark' ? 'Light' : 'Dark';
+
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.setAttribute('data-lucide', state.mode === 'dark' ? 'sun' : 'moon');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+
+      renderSwatchStrip();
+      updateChartsTheme();
+      renderAllMermaid();
+    }
+
+    const paletteSelect = document.getElementById('palette-select');
+    if (paletteSelect) {
+      paletteSelect.addEventListener('change', (e) => {
+        state.palette = e.target.value;
+        applyTheme();
+      });
+    }
+
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        state.mode = state.mode === 'dark' ? 'light' : 'dark';
+        applyTheme();
+      });
+    }
+
+    // Boot
+    initCharts();
+    applyTheme();
+  </script>
+</body>
+</html>

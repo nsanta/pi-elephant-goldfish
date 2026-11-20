@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artifact Template</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Pinned file://-safe UMD CDNs -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f8f8f6;
+      --surface: #ffffff;
+      --surface-muted: #f0efe9;
+      --border: #e2e0d8;
+      --text: #18181b;
+      --text-muted: #57534e;
+      --accent: #003f5c;
+      --accent-fg: #ffffff;
+      --grid-line: rgba(120, 113, 108, 0.18);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+
+    .card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      transition: background-color 160ms ease, border-color 160ms ease;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      background-color: var(--surface-muted);
+      color: var(--text);
+      cursor: pointer;
+      transition: opacity 120ms ease, border-color 120ms ease;
+    }
+    .btn:hover { opacity: 0.85; }
+
+    .diagram-stage {
+      background-color: var(--surface-muted);
+      background-image: radial-gradient(var(--border) 1px, transparent 1px);
+      background-size: 16px 16px;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased">
+
+  <!-- Sticky Header -->
+  <header class="sticky top-0 z-20 border-b backdrop-blur-md" style="border-color: var(--border); background: color-mix(in srgb, var(--surface) 88%, transparent);">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-base font-semibold tracking-tight truncate">Artifact Title</h1>
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full" style="background: var(--surface-muted); color: var(--text-muted); border: 1px solid var(--border);">
+            Template
+          </span>
+        </div>
+        <p class="text-xs truncate" style="color: var(--text-muted);">Concise subtitle, scope, or date</p>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <select id="palette-select" aria-label="Color palette" class="btn pr-6 outline-none">
+          <option value="dusk">Dusk Spectrum</option>
+          <option value="editorial">Editorial Paper</option>
+          <option value="nordic">Nordic Mineral</option>
+          <option value="okabe">Okabe-Ito Refined</option>
+          <option value="botanical">Botanical Ink</option>
+        </select>
+
+        <button id="theme-toggle" class="btn" title="Toggle light/dark mode">
+          <i id="theme-icon" data-lucide="moon" class="w-3.5 h-3.5"></i>
+          <span id="theme-label">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl mx-auto p-6 space-y-6">
+
+    <!-- KPI Row -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: var(--text-muted);">Primary Metric</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums mt-1">1,284</p>
+        <p class="text-xs mt-1" style="color: var(--text-muted);">+12.4% vs prior period</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: var(--text-muted);">Median Latency</p>
+        <p class="text-2xl font-semibold font-mono tabular-nums mt-1">142 ms</p>
+        <p class="text-xs mt-1" style="color: var(--text-muted);">p95: 310 ms</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: var(--text-muted);">Active Palette</p>
+        <div id="swatch-strip" class="flex items-center gap-1.5 mt-2.5"></div>
+        <p id="swatch-label" class="text-xs font-mono mt-1.5" style="color: var(--text-muted);"></p>
+      </div>
+    </section>
+
+    <!-- Charts + Diagrams Grid -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Chart.js Card -->
+      <div class="card p-5 flex flex-col">
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="text-sm font-semibold">Category Performance</h2>
+            <p class="text-xs" style="color: var(--text-muted);">Chart.js 4 with automatic theme & palette sync</p>
+          </div>
+        </div>
+        <div class="relative h-72 w-full">
+          <canvas id="sample-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Mermaid Card -->
+      <div class="card p-5 flex flex-col">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="text-sm font-semibold">Workflow Architecture</h2>
+            <p class="text-xs" style="color: var(--text-muted);">Mermaid 11 with zoom & SVG export</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button class="btn" onclick="zoomDiagram('main', -0.15)" title="Zoom out">
+              <i data-lucide="zoom-out" class="w-3.5 h-3.5"></i>
+            </button>
+            <button class="btn" onclick="zoomDiagram('main', 0)" title="Reset zoom">100%</button>
+            <button class="btn" onclick="zoomDiagram('main', 0.15)" title="Zoom in">
+              <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i>
+            </button>
+            <button class="btn" id="copy-mermaid-btn" onclick="copyMermaid('main', this)">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i><span>Copy</span>
+            </button>
+            <button class="btn" onclick="downloadSvg('main', 'workflow-diagram.svg')">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i><span>SVG</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="diagram-stage flex-1 min-h-[18rem] overflow-auto p-4 flex items-center justify-center">
+          <div id="mermaid-main" class="origin-center transition-transform duration-150"></div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    /* ============================================================
+     * 1. DESIGN SYSTEM & PALETTE REGISTRY
+     * ============================================================ */
+    const DEFAULT_PALETTE = 'dusk'; // dusk | editorial | nordic | okabe | botanical
+    const DEFAULT_MODE = 'light';   // light | dark
+
+    const THEMES = {
+      dusk: {
+        name: 'Dusk Spectrum',
+        light: {
+          bg: '#f8f8f6', surface: '#ffffff', surfaceMuted: '#f0efe9', border: '#e2e0d8',
+          text: '#18181b', textMuted: '#57534e', accent: '#003f5c', gridLine: 'rgba(120,113,108,0.18)',
+          mermaidFill: '#eef4f7', mermaidSecondary: '#f6f3f9',
+          series: ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600']
+        },
+        dark: {
+          bg: '#18181a', surface: '#222225', surfaceMuted: '#2c2c30', border: '#36363b',
+          text: '#f4f4f5', textMuted: '#a1a1aa', accent: '#ff6361', gridLine: 'rgba(161,161,170,0.16)',
+          mermaidFill: '#1e2c35', mermaidSecondary: '#2a2738',
+          series: ['#2c7da0', '#847cc4', '#d46ca9', '#ff7b79', '#ffb733']
+        }
+      },
+      editorial: {
+        name: 'Editorial Paper',
+        light: {
+          bg: '#faf8f5', surface: '#ffffff', surfaceMuted: '#f2eee7', border: '#e5dfd3',
+          text: '#1c1917', textMuted: '#635c55', accent: '#1b4965', gridLine: 'rgba(99,92,85,0.16)',
+          mermaidFill: '#edf4f8', mermaidSecondary: '#fbf3ef',
+          series: ['#1b4965', '#5fa8d3', '#3d8b7d', '#e07a5f', '#e9b85b']
+        },
+        dark: {
+          bg: '#1c1a17', surface: '#26231f', surfaceMuted: '#302c27', border: '#3d3832',
+          text: '#f5f2ec', textMuted: '#a8a29e', accent: '#e07a5f', gridLine: 'rgba(168,162,158,0.15)',
+          mermaidFill: '#1f303c', mermaidSecondary: '#362823',
+          series: ['#4a8bb2', '#7cc0e6', '#56b0a0', '#ea9279', '#f0c774']
+        }
+      },
+      nordic: {
+        name: 'Nordic Mineral',
+        light: {
+          bg: '#f6f8f9', surface: '#ffffff', surfaceMuted: '#ebf0f2', border: '#dce4e8',
+          text: '#142026', textMuted: '#586b75', accent: '#264653', gridLine: 'rgba(88,107,117,0.16)',
+          mermaidFill: '#eaf1f3', mermaidSecondary: '#edf6f5',
+          series: ['#264653', '#457b9d', '#2a9d8f', '#d98c5f', '#9b6a82']
+        },
+        dark: {
+          bg: '#14181c', surface: '#1d2329', surfaceMuted: '#262e36', border: '#323d47',
+          text: '#eef2f5', textMuted: '#94a6b3', accent: '#2a9d8f', gridLine: 'rgba(148,166,179,0.15)',
+          mermaidFill: '#1d2f36', mermaidSecondary: '#1c3330',
+          series: ['#4e7d91', '#6ba0c2', '#42baa9', '#e6a37c', '#ba89a1']
+        }
+      },
+      okabe: {
+        name: 'Okabe-Ito Refined',
+        light: {
+          bg: '#fafafa', surface: '#ffffff', surfaceMuted: '#f0f0f2', border: '#e1e1e6',
+          text: '#141417', textMuted: '#5c5c66', accent: '#0072b2', gridLine: 'rgba(92,92,102,0.16)',
+          mermaidFill: '#ebf4fa', mermaidSecondary: '#eaf7f3',
+          series: ['#0072b2', '#009e73', '#e69f00', '#cc79a7', '#d55e00']
+        },
+        dark: {
+          bg: '#161618', surface: '#202024', surfaceMuted: '#2a2a30', border: '#36363e',
+          text: '#f4f4f7', textMuted: '#a0a0ad', accent: '#38a1db', gridLine: 'rgba(160,160,173,0.15)',
+          mermaidFill: '#172d3b', mermaidSecondary: '#16332b',
+          series: ['#38a1db', '#2bc299', '#f5b324', '#de93bd', '#f07b26']
+        }
+      },
+      botanical: {
+        name: 'Botanical Ink',
+        light: {
+          bg: '#f8f9fa', surface: '#ffffff', surfaceMuted: '#eef1f0', border: '#dde3e1',
+          text: '#161d1b', textMuted: '#566360', accent: '#1f6f78', gridLine: 'rgba(86,99,96,0.16)',
+          mermaidFill: '#eaf4f5', mermaidSecondary: '#f1f0f8',
+          series: ['#1f6f78', '#6c63a6', '#5b8c5a', '#d4a03c', '#d1603d']
+        },
+        dark: {
+          bg: '#141518', surface: '#1e2024', surfaceMuted: '#272a30', border: '#343840',
+          text: '#f1f3f5', textMuted: '#9aa3ad', accent: '#3ca3ae', gridLine: 'rgba(154,163,173,0.15)',
+          mermaidFill: '#1a2f33', mermaidSecondary: '#272438',
+          series: ['#3ca3ae', '#8f87c9', '#7bb079', '#e5b657', '#e37e5e']
+        }
+      }
+    };
+
+    const state = {
+      palette: localStorage.getItem('artifact-palette') || DEFAULT_PALETTE,
+      mode: localStorage.getItem('artifact-mode') || DEFAULT_MODE,
+      zoom: { main: 1 }
+    };
+
+    if (!THEMES[state.palette]) state.palette = DEFAULT_PALETTE;
+
+    function getActiveTheme() {
+      return THEMES[state.palette][state.mode];
+    }
+
+    /* ============================================================
+     * 2. MERMAID DIAGRAMS & CONTROLS
+     * ============================================================ */
+    const MERMAID_DIAGRAMS = {
+      main: `
+        flowchart LR
+          A([User Prompt]) --> B[Load _template.html]
+          B --> C{Artifact Type}
+          C -->|Metrics| D[Chart.js 4]
+          C -->|Systems| E[Mermaid 11]
+          D --> F[Save ./artifacts/*.html]
+          E --> F
+          F --> G([Auto-Open Browser])
+      `
+    };
+
+    async function renderAllMermaid() {
+      if (typeof mermaid === 'undefined') return;
+      const t = getActiveTheme();
+
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        securityLevel: 'loose',
+        themeVariables: {
+          fontFamily: 'Inter, system-ui, sans-serif',
+          fontSize: '13px',
+          primaryColor: t.mermaidFill,
+          primaryTextColor: t.text,
+          primaryBorderColor: t.series[0],
+          secondaryColor: t.mermaidSecondary,
+          secondaryTextColor: t.text,
+          secondaryBorderColor: t.series[1],
+          tertiaryColor: t.surfaceMuted,
+          tertiaryTextColor: t.text,
+          tertiaryBorderColor: t.series[4],
+          lineColor: t.textMuted,
+          textColor: t.text,
+          edgeLabelBackground: t.surface,
+          clusterBkg: t.surface,
+          clusterBorder: t.border
+        }
+      });
+
+      for (const [id, src] of Object.entries(MERMAID_DIAGRAMS)) {
+        const el = document.getElementById(`mermaid-${id}`);
+        if (!el) continue;
+        const { svg } = await mermaid.render(`svg-${id}-${Date.now()}`, src.trim());
+        el.innerHTML = svg;
+      }
+    }
+
+    function zoomDiagram(id, delta) {
+      state.zoom[id] = delta === 0 ? 1 : Math.min(2.2, Math.max(0.5, (state.zoom[id] || 1) + delta));
+      const el = document.getElementById(`mermaid-${id}`);
+      if (el) el.style.transform = `scale(${state.zoom[id]})`;
+    }
+
+    async function copyMermaid(id, btn) {
+      const src = MERMAID_DIAGRAMS[id]?.trim();
+      if (!src) return;
+      await navigator.clipboard.writeText(src);
+      const label = btn.querySelector('span');
+      const prev = label.textContent;
+      label.textContent = 'Copied';
+      setTimeout(() => (label.textContent = prev), 1200);
+    }
+
+    function downloadSvg(id, filename) {
+      const svg = document.querySelector(`#mermaid-${id} svg`);
+      if (!svg) return;
+      const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ============================================================
+     * 3. CHART.JS REGISTRY & DYNAMIC RE-THEMING
+     * ============================================================ */
+    const charts = [];
+
+    function initCharts() {
+      const t = getActiveTheme();
+      const ctx = document.getElementById('sample-chart');
+      if (!ctx || typeof Chart === 'undefined') return;
+
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+          datasets: [
+            { label: 'Core Platform', data: [64, 78, 86, 94], _colorIdx: 0, backgroundColor: t.series[0], borderRadius: 6 },
+            { label: 'Automation',    data: [38, 52, 61, 75], _colorIdx: 2, backgroundColor: t.series[2], borderRadius: 6 },
+            { label: 'Analytics',     data: [22, 31, 45, 58], _colorIdx: 4, backgroundColor: t.series[4], borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: t.textMuted, boxWidth: 12, usePointStyle: true } },
+            tooltip: { backgroundColor: t.surface, titleColor: t.text, bodyColor: t.textMuted, borderColor: t.border, borderWidth: 1 }
+          },
+          scales: {
+            x: { ticks: { color: t.textMuted }, grid: { display: false } },
+            y: { ticks: { color: t.textMuted }, grid: { color: t.gridLine }, border: { display: false } }
+          }
+        }
+      });
+
+      charts.push(chart);
+    }
+
+    function updateChartsTheme() {
+      const t = getActiveTheme();
+      charts.forEach((chart) => {
+        chart.data.datasets.forEach((ds, i) => {
+          const idx = ds._colorIdx ?? (i % t.series.length);
+          const color = t.series[idx % t.series.length];
+          if (Array.isArray(ds.backgroundColor)) {
+            ds.backgroundColor = ds.data.map((_, j) => t.series[j % t.series.length]);
+          } else {
+            ds.backgroundColor = color;
+          }
+          if (ds.borderColor) ds.borderColor = color;
+        });
+
+        if (chart.options.scales) {
+          Object.values(chart.options.scales).forEach((scale) => {
+            if (scale.ticks) scale.ticks.color = t.textMuted;
+            if (scale.grid && scale.grid.display !== false) scale.grid.color = t.gridLine;
+          });
+        }
+        if (chart.options.plugins?.legend?.labels) {
+          chart.options.plugins.legend.labels.color = t.textMuted;
+        }
+        if (chart.options.plugins?.tooltip) {
+          Object.assign(chart.options.plugins.tooltip, {
+            backgroundColor: t.surface, titleColor: t.text, bodyColor: t.textMuted, borderColor: t.border
+          });
+        }
+        chart.update('none');
+      });
+    }
+
+    /* ============================================================
+     * 4. APPLY THEME & BIND UI CONTROLS
+     * ============================================================ */
+    function renderSwatchStrip() {
+      const t = getActiveTheme();
+      const strip = document.getElementById('swatch-strip');
+      const label = document.getElementById('swatch-label');
+      if (!strip) return;
+      strip.innerHTML = t.series.map((hex) =>
+        `<span title="${hex}" class="h-5 flex-1 rounded" style="background:${hex}"></span>`
+      ).join('');
+      if (label) label.textContent = `${THEMES[state.palette].name} (${state.mode})`;
+    }
+
+    function applyTheme() {
+      const t = getActiveTheme();
+      const root = document.documentElement;
+      root.setAttribute('data-theme', state.mode);
+
+      const vars = {
+        '--bg': t.bg,
+        '--surface': t.surface,
+        '--surface-muted': t.surfaceMuted,
+        '--border': t.border,
+        '--text': t.text,
+        '--text-muted': t.textMuted,
+        '--accent': t.accent,
+        '--grid-line': t.gridLine
+      };
+      Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+      localStorage.setItem('artifact-palette', state.palette);
+      localStorage.setItem('artifact-mode', state.mode);
+
+      document.getElementById('palette-select').value = state.palette;
+      document.getElementById('theme-label').textContent = state.mode === 'dark' ? 'Light' : 'Dark';
+
+      const icon = document.getElementById('theme-icon');
+      icon.setAttribute('data-lucide', state.mode === 'dark' ? 'sun' : 'moon');
+      lucide.createIcons();
+
+      renderSwatchStrip();
+      updateChartsTheme();
+      renderAllMermaid();
+    }
+
+    document.getElementById('palette-select').addEventListener('change', (e) => {
+      state.palette = e.target.value;
+      applyTheme();
+    });
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      state.mode = state.mode === 'dark' ? 'light' : 'dark';
+      applyTheme();
+    });
+
+    // Boot
+    initCharts();
+    applyTheme();
+  </script>
+</body>
+</html>
