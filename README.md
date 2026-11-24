@@ -48,13 +48,19 @@ and the session is notified of the path, then yields the turn.
 Requirements: Pi >= 1.4.0 (tested against 1.4.0). Reviews spawn zero-context `pi --print`
 children, so the `pi` binary must be on `PATH`.
 
-**Option A — from a published git repository** (placeholder: `nsanta` pending repo publish):
+**Option A — from npm** (recommended):
+
+```sh
+pi install npm:pi-elephant-goldfish
+```
+
+**Option B — from the git repository:**
 
 ```sh
 pi install git:github.com/nsanta/pi-elephant-goldfish
 ```
 
-**Option B — development, from a clone of this repository:**
+**Option C — development, from a clone of this repository:**
 
 ```sh
 git clone <this-repo> && cd pi-elephant-goldfish
