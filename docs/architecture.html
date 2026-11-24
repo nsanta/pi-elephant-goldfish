@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture</title>
+  <meta name="description" content="Internal architecture of the pi-elephant-goldfish Pi package: package layout, the egm-core extension entry point, each registered tool, and how zero-context Goldfish reviewer agents are created at runtime.">
+  <meta name="okf:type" content="doc">
+  <meta name="okf:resource" content="architecture">
+  <meta name="okf:status" content="stable">
+  <meta name="okf:stale_after" content="2027-05-24">
+  <meta name="okf:generated.at" content="2026-11-24T14:55:00Z">
+  <meta name="okf:tags" content="architecture">
+  <meta name="okf:tags" content="pi-package">
+  <meta name="okf:tags" content="extension">
+  <meta name="okf:tags" content="egm">
+  <style>
+    :root {
+      --bg: #f8f8f6;
+      --surface: #ffffff;
+      --surface-muted: #f0efe9;
+      --border: #e2e0d8;
+      --text: #18181b;
+      --text-muted: #57534e;
+      --accent: #003f5c;
+      --accent-fg: #ffffff;
+      --grid-line: rgba(120, 113, 108, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    code, pre {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .site-header {
+      position: sticky; top: 0; z-index: 20;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(8px);
+      transition: background-color 160ms ease, border-color 160ms ease;
+    }
+    .header-inner {
+      max-width: 1120px; margin: 0 auto; padding: 0 1.25rem;
+      height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .header-id { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+    .doc-title { font-weight: 600; font-size: 0.95rem; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge {
+      flex-shrink: 0; font-size: 0.68rem; font-weight: 500; padding: 0.12rem 0.55rem;
+      border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface-muted); color: var(--text-muted);
+    }
+    .controls { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    .ctl {
+      font: inherit; font-size: 0.75rem; font-weight: 500;
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.35rem 0.6rem; border-radius: 0.5rem;
+      border: 1px solid var(--border); background: var(--surface-muted); color: var(--text);
+      cursor: pointer; transition: opacity 120ms ease, border-color 120ms ease;
+    }
+    .ctl:hover { opacity: 0.85; }
+    select.ctl { padding-right: 1.7rem; outline: none; }
+    .ctl svg { display: block; }
+
+    article { max-width: 800px; margin: 0 auto; padding: 2.5rem 1.5rem 4.5rem; }
+
+    h1, h2, h3, h4, h5, h6 { line-height: 1.25; color: var(--text); font-weight: 650; }
+    h1 { font-size: 2.1rem; letter-spacing: -0.02em; margin: 0 0 1.1rem; }
+    h2 {
+      font-size: 1.38rem; letter-spacing: -0.01em;
+      margin: 2.6rem 0 0.9rem; padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 1.12rem; margin: 1.9rem 0 0.7rem; }
+    h4, h5, h6 { font-size: 1rem; margin: 1.5rem 0 0.6rem; }
+    p { margin: 0.9rem 0; }
+    ul, ol { margin: 0.9rem 0; padding-left: 1.5rem; }
+    li { margin: 0.32rem 0; }
+    a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    a:hover { text-decoration: underline; }
+    strong { font-weight: 650; }
+
+    code {
+      background: var(--surface-muted); border: 1px solid var(--border);
+      border-radius: 5px; padding: 0.08em 0.35em; font-size: 0.86em;
+      word-break: break-word;
+    }
+    h1 code, h2 code, h3 code { font-size: 0.9em; }
+    pre {
+      background: var(--surface-muted); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.1rem; margin: 1.1rem 0;
+      overflow-x: auto; font-size: 0.8rem; line-height: 1.55;
+    }
+    pre code { background: none; border: none; padding: 0; font-size: inherit; word-break: normal; }
+
+    table { width: 100%; border-collapse: collapse; margin: 1.1rem 0; font-size: 0.9rem; }
+    th, td { border: 1px solid var(--border); padding: 0.45rem 0.7rem; text-align: left; vertical-align: top; }
+    thead th { background: var(--surface-muted); font-weight: 600; }
+
+    blockquote {
+      margin: 1.1rem 0; padding: 0.4rem 1.1rem;
+      border-left: 3px solid var(--accent);
+      background: var(--surface-muted); border-radius: 0 6px 6px 0;
+      color: var(--text-muted);
+    }
+    blockquote p { margin: 0.4rem 0; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2.4rem 0; }
+
+    @media (max-width: 640px) {
+      .doc-title { font-size: 0.85rem; }
+      article { padding: 1.75rem 1.1rem 3.5rem; }
+      h1 { font-size: 1.7rem; }
+    }
+    @media print {
+      .controls { display: none; }
+      body { background: #ffffff; }
+      .site-header { position: static; backdrop-filter: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-id">
+        <span class="doc-title">Architecture</span>
+        <span class="badge">stable</span>
+      </div>
+      <div class="controls">
+        <select id="palette-select" class="ctl" aria-label="Color palette">
+          <option value="dusk">Dusk Spectrum</option>
+          <option value="editorial">Editorial Paper</option>
+          <option value="nordic">Nordic Mineral</option>
+          <option value="okabe">Okabe-Ito Refined</option>
+          <option value="botanical">Botanical Ink</option>
+        </select>
+        <button id="theme-toggle" class="ctl" title="Toggle light/dark mode">
+          <span id="theme-icon" aria-hidden="true"></span>
+          <span id="theme-label">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <article>
+      <h1>Architecture</h1>
+
+      <p>How the pi-elephant-goldfish extension works internally: package layout, the
+      extension entry point, each registered tool, and how Goldfish reviewer agents
+      are created at runtime. For daily-use guidance (delegation mapping, artifact
+      directory, known limits) see <a href="pi.html">pi.md</a>; for port design decisions see
+      <a href="../PLAN.md">PLAN.md</a>; for upstream provenance see <a href="../UPSTREAM.md">UPSTREAM.md</a>.</p>
+
+      <h2>1. Big picture</h2>
+
+      <p>This is a <strong>Pi package</strong> (<code>package.json</code> → <code>"pi": { "extensions": ["extensions/*.ts"], "skills": ["skills/*"] }</code>)
+      with two halves:</p>
+
+      <ul>
+        <li><strong>Vendored upstream content</strong> (pure markdown, from <code>google/elephant-goldfish-model</code>):
+        skills, reviewer personas, and document standards — the <em>what to do</em>.</li>
+        <li><strong>The Pi extension</strong> (TypeScript under <code>extensions/</code>): the <em>how to do it on Pi</em> —
+        tools, commands, and subprocess spawning.</li>
+      </ul>
+
+      <pre><code>┌──────────────────────────────────────────────────────────────────────┐
+│                           Pi coding agent                             │
+│                                                                       │
+│  package.json ──► loads extensions/*.ts ──► egm-core.ts               │
+│                                             (single entry point)      │
+│                                                  │ registers          │
+│      ┌────────────────┬───────────────┬──────────┼───────────────┐    │
+│      ▼                ▼               ▼          ▼               ▼    │
+│ /egm-* commands   egm_ask tool   egm_goldfish  egm_bootstrap  egm_state│
+│ (7 aliases)       (human gate)   (reviewers)   (doc workers)  (state) │
+└────────┬─────────────────┬────────────────┬──────────────┬───────────┘
+         │                 │                │              │
+         ▼                 │                ▼              │
+  skills/egm-*/SKILL.md    │      spawns fresh `pi --print`    │
+  (vendored upstream)      │      child processes              │
+         │                 │                │                   │
+         └─── instructs the model ─────► uses these tools ─────┘
+
+  Vendored assets read at runtime by the extension:
+    agents/*.md                    ← reviewer personas
+    resources/document_standards/* ← document standards</code></pre>
+
+      <p>Key design decision: <strong>the workflow is model-driven</strong>. The TypeScript code
+      contains no review logic — it only provides mechanisms (spawn, gate, persist).
+      The <em>protocol</em> lives in the vendored <code>SKILL.md</code> prose, which the model follows.
+      This keeps the vendored files byte-identical to upstream (except minimal
+      scripted adaptations) as the single source of truth.</p>
+
+      <h2>2. Package layout</h2>
+
+      <table>
+        <thead>
+          <tr><th>Path</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>extensions/egm-core.ts</code></td><td>Only top-level extension entry point; registers everything below.</td></tr>
+          <tr><td><code>extensions/lib/commands.ts</code></td><td>The seven <code>/egm-*</code> skill-alias commands.</td></tr>
+          <tr><td><code>extensions/lib/ask-options.ts</code></td><td><code>egm_ask</code> option normalization (pure module).</td></tr>
+          <tr><td><code>extensions/lib/goldfish.ts</code></td><td><code>egm_goldfish</code> reviewer spawning + report building.</td></tr>
+          <tr><td><code>extensions/lib/bootstrap.ts</code></td><td><code>egm_bootstrap</code> deterministic pipeline + tool registration.</td></tr>
+          <tr><td><code>extensions/lib/worker-run.ts</code></td><td>Read-write worker child runner + bounded-concurrency pool (shared by bootstrap).</td></tr>
+          <tr><td><code>extensions/lib/state.ts</code></td><td><code>egm_state</code> durable branch-aware pipeline state.</td></tr>
+          <tr><td><code>extensions/lib/paths.ts</code></td><td>Package-root derivation, persona/standard alias resolution.</td></tr>
+          <tr><td><code>extensions/lib/artifact-dir.ts</code></td><td>Artifact-directory and layout resolution (<code>flat</code>/<code>structured</code>), slug normalization, report-collision suffix, env knob parsing.</td></tr>
+          <tr><td><code>skills/egm-*/SKILL.md</code></td><td>Vendored EGM skills (one <code>/egm-*</code> command each).</td></tr>
+          <tr><td><code>agents/*.md</code></td><td>Vendored reviewer personas (zoom_out, comprehension, design_critic, implementation_readiness, structural, style, codebase_details; plus synthesizer and bootstrap_orchestrator roles that never spawn as reviewers).</td></tr>
+          <tr><td><code>resources/document_standards/*.md</code></td><td>Vendored document standards enforced by reviewers in review-loop workflows.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>3. Extension entry point</h2>
+
+      <p><code>extensions/egm-core.ts</code> exports a default <code>egmCore(pi: ExtensionAPI)</code> that Pi
+      invokes on session start. It registers:</p>
+
+      <ul>
+        <li><code>/egm-version</code> — prints the package version.</li>
+        <li><code>egm_ask</code> — single-select interactive gate (TUI SelectList dialog or
+        plain-chat fallback; see §5).</li>
+        <li><code>egm_goldfish</code> — zero-context reviewer spawning (see §4).</li>
+        <li><code>egm_bootstrap</code> — recursive EGM README generation (see §6).</li>
+        <li><code>egm_state</code> — durable pipeline state (see §7).</li>
+        <li>the seven <code>/egm-*</code> commands (see §8) via <code>registerEgmCommands(pi)</code>.</li>
+      </ul>
+
+      <p>Support modules live under <code>extensions/lib/</code> and are imported relatively;
+      <code>extensions/*.ts</code> stays the only top-level entry point.</p>
+
+      <h2>4. How Goldfish agents are created (<code>egm_goldfish</code>)</h2>
+
+      <p>There are <strong>no registered agents</strong>. A Goldfish reviewer is a <strong>persona markdown
+      file</strong> plus a <strong>fresh <code>pi --print</code> subprocess</strong> with no session, no history,
+      and read-only tools. Its entire world is a prompt composed by the extension.</p>
+
+      <pre><code>Model calls: egm_goldfish { reviewers: ["zoom_out","design_critic","style"],
+                            targetFile: "design_draft.md",
+                            standards: { "style": "feature-spec-standard" } }
+        │
+        ▼
+┌─ Validation phase ──────────────────────────────────────────────┐
+│ resolvePersona() / resolveStandard()  (lib/paths.ts)            │
+│   • alias table: "zoom_out" → &lt;pkg&gt;/agents/zoom_out.md          │
+│   • accepts file paths too (name contains "/")                  │
+│   • REJECTS "synthesizer"/"bootstrap_orchestrator" with an      │
+│     instructive error (those roles are built in, not reviewers) │
+│ findPiBinary() — `pi` must exist on PATH, else hard fail:       │
+│   "a review in the same context is not a Goldfish review"       │
+└─────────────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌─ Fan-out (bounded concurrency, default 3) ──────────────────────┐
+│   worker pool pulls reviewers off a shared index                │
+│                                                                 │
+│   per reviewer: buildChildPrompt() composes a SELF-CONTAINED    │
+│   prompt:                                                       │
+│   ┌───────────────────────────────────────────────────────┐     │
+│   │ "You are a Goldfish reviewer subagent: strictly       │     │
+│   │  read-only, zero prior conversation context..."       │     │
+│   │ "First read your persona definition at                │     │
+│   │  &lt;pkg&gt;/agents/zoom_out.md and adopt it fully."        │     │
+│   │ "Then read the evaluation standard at ..." (if any)   │     │
+│   │ "Mode: review|brainstorm. Target document: ...        │     │
+│   │  [range: full file] [semantic target: ...]"           │     │
+│   │ "Baseline reading list: ..."                          │     │
+│   │ Report format: Severity / Scope / Description /       │     │
+│   │ Rationale ... else exactly "No findings."             │     │
+│   └───────────────────────────────────────────────────────┘     │
+│                                                                 │
+│   spawn("pi", ["--print","--no-session",                        │
+│                "--tools","read,grep,find,ls", prompt])          │
+│        cwd = workspace, stdout/stderr piped                     │
+│        timeout EGM_GOLDFISH_TIMEOUT_MS (default 900000 ms)      │
+│        on timeout/abort: SIGTERM → SIGKILL after 5s             │
+└─────────────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌─ Consolidation (deterministic, no LLM) ─────────────────────────┐
+│ tallySeverities(): regex-count "Severity: blocker|major|nit"    │
+│   per reviewer + total (counted, not deduplicated)              │
+│ buildReport(): write &lt;artifactDir&gt;/goldfish_review_report.md    │
+│   (auto-numbered -2.md, -3.md if the name is taken), under the  │
+│   package file-mutation queue                                   │
+└─────────────────────────────────────────────────────────────────┘
+        │
+        ▼
+Tool result to the model: ONLY the report path + a one-line summary
+("…5 ok, 0 failed. Findings tally: 1 Blocker, 3 Major, 2 Nit")
+plus per-reviewer tallies in `details` — artifact-first: full
+findings are never returned in the tool result.</code></pre>
+
+      <p><strong>Why this yields genuinely zero-context reviewers:</strong> each child is a brand-new
+      Pi process with <code>--no-session</code>. Its only context is the composed prompt — it
+      has no stake in the document being good and no memory of the design
+      conversation. The persona file (e.g. <code>agents/zoom_out.md</code>, the "Skeptical
+      Architect" focused on YAGNI and simplicity) is read <em>by the child itself</em> as
+      its first action, so its identity comes from vendored markdown, not from any
+      harness agent registry.</p>
+
+      <p>Failure handling: a child that exits nonzero, times out, or is aborted is
+      encoded as <code>timeout</code>/<code>error</code> in the consolidated report (with a stderr tail);
+      the tool only throws when <strong>all</strong> reviewers failed, so one flaky child never
+      discards the others' findings.</p>
+
+      <h2>5. Human gates (<code>egm_ask</code>)</h2>
+
+      <pre><code>Model: egm_ask { question: "Adopt router A or B?",
+                 options: [{title:"Router A", description:"..."}, "Router B"] }
+        │
+        ▼
+lib/ask-options.ts normalizeAskOptions()
+  • accepts plain strings OR {title, description} objects (models
+    routinely reach for the object shape popularized by ask tools)
+  • strips "(Recommended)"-style markers — the EGM interaction
+    invariant bans biased gates; enforcing at normalization makes it
+    API-enforced instead of advisory
+        │
+        ├── TUI mode? ──► AskSelectDialog (pi-tui SelectList)
+        │                   ↑/↓ or keys 1-9 select, Enter confirm,
+        │                   Esc cancel → "User selected: &lt;option&gt;"
+        │                   (cancel → instructs the model to ask in
+        │                    plain chat)
+        │
+        └── headless (--print/RPC)? ──► instructive result text:
+              "No interactive UI in this mode. Ask the user in plain
+               chat and end your turn: &lt;question&gt; Options: 1) … 2) …"</code></pre>
+
+      <h2>6. <code>egm_bootstrap</code> (recursive README generation)</h2>
+
+      <p>Unlike reviews, this pipeline <strong>is</strong> deterministic extension code
+      (<code>lib/bootstrap.ts</code>): everything the upstream SKILL.md expresses procedurally
+      (BFS discovery, pruning, partitioning, retries, verification) lives in
+      exported pure functions, while the model-driven scout work happens inside the
+      spawned workers.</p>
+
+      <pre><code>egm_bootstrap { path: "src/", targetFilename: "README.md" }
+        │
+        ▼
+1. discoverTree()      BFS level-by-level (no recursive glob);
+                       skip .git/node_modules/…, honor .gitignore
+                       and .egmignore (documented glob subset)
+2. pruneTree()         bottom-up pruning (drop leaves without
+                       production source, keep manifest files)
+3. SAFETY GATE         pruned dirs &gt; 15 &amp;&amp; !approved ?
+                       └─► return gate message; the model must ask
+                           via egm_ask and re-call with approved:true
+                           (or stop if declined)
+4. partitionTree()     adaptive partitioning → worker scopes
+5. runPool() parallel  one pi --print worker per partition with
+   workers             WRITE tools: --tools read,grep,find,ls,write,edit
+                       worker writes README.md files and returns a
+                       JSON subtree index on stdout
+6. validate JSON       extractJson() + validateSubtreeIndex();
+                       exactly ONE retry on malformed output
+                       (upstream fault tolerance); failed partitions
+                       get placeholder entries
+7. roll-up             deterministic intermediate blueprints
+                       bottom-up, then the root compiler worker
+                       merges everything
+8. verifyContractFiles()  mandatory final verification pass
+        │
+        ▼
+Report → bootstrap_report.md; result: report path, written-file
+count, verification violations</code></pre>
+
+      <p>Tool-symmetry with reviews: <strong>Goldfish reviewers are read-only</strong>
+      (<code>read,grep,find,ls</code>) while <strong>bootstrap workers can write</strong>
+      (<code>…,write,edit</code>) — mirrored by <code>goldfish.ts</code> vs <code>worker-run.ts</code>.</p>
+
+      <h2>7. Durable pipeline state (<code>egm_state</code>)</h2>
+
+      <p>Long multi-stage reviews must survive compaction, pause/resume, and branching:</p>
+
+      <pre><code>set: pi.appendEntry("egm-state", value)
+     └─ custom session entry: durable on disk, excluded from model context
+get: walk ctx.sessionManager.getBranch() backwards,
+     return the first entry with customType "egm-state"
+     └─ branch-scoped: abandoned branches are alternative
+        histories and are never read</code></pre>
+
+      <p>State is compact JSON (preset, stage, line ranges, report paths, iteration
+      counts) saved at stage boundaries by the model, per the skill prose.</p>
+
+      <h2>8. <code>/egm-*</code> commands (skill injection)</h2>
+
+      <p>Each <code>/egm-*</code> command is a thin alias that injects a vendored skill as a
+      normal user turn:</p>
+
+      <pre><code>User types: /egm-review design_draft.md uninterrupted
+        │
+        ▼
+lib/commands.ts  registerSkillCommand()
+        │
+        ├─ read  skills/egm-review/SKILL.md
+        ├─ stripFrontmatter()    ← removes the leading YAML --- block
+        └─ buildCommandPayload() ← appends "\n---\nUser arguments: ..."
+        │
+        ▼
+pi.sendUserMessage(payload)   ← starts a NORMAL user turn
+        │
+        ▼
+The model now "is" the skill: it follows the upstream EGM protocol
+(intake → stages → reports), calling egm_goldfish / egm_ask /
+egm_state as the prose instructs.</code></pre>
+
+      <p>There is no orchestration code for reviews, so behavior is identical in TUI,
+      RPC, JSON, and <code>--print</code> modes (no <code>ctx.ui</code> calls on the happy path). The
+      seven commands map one-to-one onto the vendored skill directories:
+      <code>egm-brainstorm</code>, <code>egm-draft</code>, <code>egm-review</code>, <code>egm-review-loop</code>, <code>egm-resolve</code>,
+      <code>egm-drift-report</code>, <code>egm-bootstrap</code>.</p>
+
+      <h2>9. Artifact directory resolution</h2>
+
+      <pre><code>EGM_ARTIFACT_DIR env var
+   └─ else "EGM artifact directory: &lt;path&gt;" line (case-insensitive key)
+      in &lt;workspace&gt;/AGENTS.md, then &lt;workspace&gt;/CLAUDE.md
+      └─ else the working directory
+        │
+        ▼  (created recursively if missing; relative → workspace root)
+EGM_ARTIFACT_LAYOUT env var
+   └─ else "EGM artifact layout: flat|structured" marker line
+      └─ else structured (default)
+        │
+        ▼
+structured: &lt;artifact-dir&gt;/egm/&lt;feature-slug&gt;/{concepts_brief,design_draft,*_report}.md
+            &lt;artifact-dir&gt;/egm/bootstrap/bootstrap_report.md
+flat:       &lt;artifact-dir&gt;/{concepts_brief,design_draft,*_report,bootstrap_report}.md
+            (auto-numbered -2, -3… inside the report's own directory)</code></pre>
+
+      <h2>10. Environment knobs</h2>
+
+      <table>
+        <thead>
+          <tr><th>Variable</th><th>Default</th><th>Applies to</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>EGM_ARTIFACT_LAYOUT</code></td><td><code>structured</code></td><td>Artifact arrangement (§9): <code>structured</code> or <code>flat</code>.</td></tr>
+          <tr><td><code>EGM_ARTIFACT_DIR</code></td><td>working directory</td><td>Artifact root directory (§9).</td></tr>
+          <tr><td><code>EGM_GOLDFISH_TIMEOUT_MS</code></td><td><code>900000</code></td><td>Per-reviewer child timeout (§4).</td></tr>
+          <tr><td><code>EGM_GOLDFISH_MAX_CONCURRENT</code></td><td><code>3</code></td><td>Max simultaneous reviewer children (§4).</td></tr>
+          <tr><td><code>EGM_BOOTSTRAP_TIMEOUT_MS</code></td><td><code>900000</code></td><td>Per-worker child timeout (§6).</td></tr>
+          <tr><td><code>EGM_BOOTSTRAP_MAX_CONCURRENT</code></td><td><code>3</code></td><td>Max simultaneous bootstrap workers (§6).</td></tr>
+        </tbody>
+      </table>
+
+      <p>Invalid values fall back to the defaults (clamped to ≥ 1).</p>
+    </article>
+  </main>
+
+  <script>
+    /* Design system: palette registry & light/dark sync (from artifacts/_template.html). */
+    const DEFAULT_PALETTE = 'dusk';
+    const DEFAULT_MODE = 'light';
+
+    const THEMES = {
+      dusk: {
+        name: 'Dusk Spectrum',
+        light: {
+          bg: '#f8f8f6', surface: '#ffffff', surfaceMuted: '#f0efe9', border: '#e2e0d8',
+          text: '#18181b', textMuted: '#57534e', accent: '#003f5c', gridLine: 'rgba(120,113,108,0.18)',
+          mermaidFill: '#eef4f7', mermaidSecondary: '#f6f3f9',
+          series: ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600']
+        },
+        dark: {
+          bg: '#18181a', surface: '#222225', surfaceMuted: '#2c2c30', border: '#36363b',
+          text: '#f4f4f5', textMuted: '#a1a1aa', accent: '#ff6361', gridLine: 'rgba(161,161,170,0.16)',
+          mermaidFill: '#1e2c35', mermaidSecondary: '#2a2738',
+          series: ['#2c7da0', '#847cc4', '#d46ca9', '#ff7b79', '#ffb733']
+        }
+      },
+      editorial: {
+        name: 'Editorial Paper',
+        light: {
+          bg: '#faf8f5', surface: '#ffffff', surfaceMuted: '#f2eee7', border: '#e5dfd3',
+          text: '#1c1917', textMuted: '#635c55', accent: '#1b4965', gridLine: 'rgba(99,92,85,0.16)',
+          mermaidFill: '#edf4f8', mermaidSecondary: '#fbf3ef',
+          series: ['#1b4965', '#5fa8d3', '#3d8b7d', '#e07a5f', '#e9b85b']
+        },
+        dark: {
+          bg: '#1c1a17', surface: '#26231f', surfaceMuted: '#302c27', border: '#3d3832',
+          text: '#f5f2ec', textMuted: '#a8a29e', accent: '#e07a5f', gridLine: 'rgba(168,162,158,0.15)',
+          mermaidFill: '#1f303c', mermaidSecondary: '#362823',
+          series: ['#4a8bb2', '#7cc0e6', '#56b0a0', '#ea9279', '#f0c774']
+        }
+      },
+      nordic: {
+        name: 'Nordic Mineral',
+        light: {
+          bg: '#f6f8f9', surface: '#ffffff', surfaceMuted: '#ebf0f2', border: '#dce4e8',
+          text: '#142026', textMuted: '#586b75', accent: '#264653', gridLine: 'rgba(88,107,117,0.16)',
+          mermaidFill: '#eaf1f3', mermaidSecondary: '#edf6f5',
+          series: ['#264653', '#457b9d', '#2a9d8f', '#d98c5f', '#9b6a82']
+        },
+        dark: {
+          bg: '#14181c', surface: '#1d2329', surfaceMuted: '#262e36', border: '#323d47',
+          text: '#eef2f5', textMuted: '#94a6b3', accent: '#2a9d8f', gridLine: 'rgba(148,166,179,0.15)',
+          mermaidFill: '#1d2f36', mermaidSecondary: '#1c3330',
+          series: ['#4e7d91', '#6ba0c2', '#42baa9', '#e6a37c', '#ba89a1']
+        }
+      },
+      okabe: {
+        name: 'Okabe-Ito Refined',
+        light: {
+          bg: '#fafafa', surface: '#ffffff', surfaceMuted: '#f0f0f2', border: '#e1e1e6',
+          text: '#141417', textMuted: '#5c5c66', accent: '#0072b2', gridLine: 'rgba(92,92,102,0.16)',
+          mermaidFill: '#ebf4fa', mermaidSecondary: '#eaf7f3',
+          series: ['#0072b2', '#009e73', '#e69f00', '#cc79a7', '#d55e00']
+        },
+        dark: {
+          bg: '#161618', surface: '#202024', surfaceMuted: '#2a2a30', border: '#36363e',
+          text: '#f4f4f7', textMuted: '#a0a0ad', accent: '#38a1db', gridLine: 'rgba(160,160,173,0.15)',
+          mermaidFill: '#172d3b', mermaidSecondary: '#16332b',
+          series: ['#38a1db', '#2bc299', '#f5b324', '#de93bd', '#f07b26']
+        }
+      },
+      botanical: {
+        name: 'Botanical Ink',
+        light: {
+          bg: '#f8f9fa', surface: '#ffffff', surfaceMuted: '#eef1f0', border: '#dde3e1',
+          text: '#161d1b', textMuted: '#566360', accent: '#1f6f78', gridLine: 'rgba(86,99,96,0.16)',
+          mermaidFill: '#eaf4f5', mermaidSecondary: '#f1f0f8',
+          series: ['#1f6f78', '#6c63a6', '#5b8c5a', '#d4a03c', '#d1603d']
+        },
+        dark: {
+          bg: '#141518', surface: '#1e2024', surfaceMuted: '#272a30', border: '#343840',
+          text: '#f1f3f5', textMuted: '#9aa3ad', accent: '#3ca3ae', gridLine: 'rgba(154,163,173,0.15)',
+          mermaidFill: '#1a2f33', mermaidSecondary: '#272438',
+          series: ['#3ca3ae', '#8f87c9', '#7bb079', '#e5b657', '#e37e5e']
+        }
+      }
+    };
+
+    const ICONS = {
+      moon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>',
+      sun: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>'
+    };
+
+    const state = {
+      palette: localStorage.getItem('okf-doc-palette') || DEFAULT_PALETTE,
+      mode: localStorage.getItem('okf-doc-mode') || DEFAULT_MODE
+    };
+    if (!THEMES[state.palette]) state.palette = DEFAULT_PALETTE;
+    if (state.mode !== 'light' && state.mode !== 'dark') state.mode = DEFAULT_MODE;
+
+    function getActiveTheme() {
+      return THEMES[state.palette][state.mode];
+    }
+
+    function applyTheme() {
+      const t = getActiveTheme();
+      const root = document.documentElement;
+      root.setAttribute('data-theme', state.mode);
+
+      const vars = {
+        '--bg': t.bg,
+        '--surface': t.surface,
+        '--surface-muted': t.surfaceMuted,
+        '--border': t.border,
+        '--text': t.text,
+        '--text-muted': t.textMuted,
+        '--accent': t.accent,
+        '--grid-line': t.gridLine
+      };
+      Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+      localStorage.setItem('okf-doc-palette', state.palette);
+      localStorage.setItem('okf-doc-mode', state.mode);
+
+      document.getElementById('palette-select').value = state.palette;
+      document.getElementById('theme-label').textContent = state.mode === 'dark' ? 'Light' : 'Dark';
+      document.getElementById('theme-icon').innerHTML = state.mode === 'dark' ? ICONS.sun : ICONS.moon;
+    }
+
+    document.getElementById('palette-select').addEventListener('change', (e) => {
+      state.palette = e.target.value;
+      applyTheme();
+    });
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      state.mode = state.mode === 'dark' ? 'light' : 'dark';
+      applyTheme();
+    });
+
+    applyTheme();
+  </script>
+</body>
+</html>

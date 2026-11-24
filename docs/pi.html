@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Using EGM with Pi</title>
+  <meta name="description" content="User guide for running the Elephant-Goldfish Model (EGM) on the Pi coding agent: installation, delegation mapping, artifact directory layout, /egm-* commands, tools, environment knobs, and known limits.">
+  <meta name="okf:type" content="doc">
+  <meta name="okf:resource" content="pi">
+  <meta name="okf:status" content="stable">
+  <meta name="okf:stale_after" content="2027-05-24">
+  <meta name="okf:generated.at" content="2026-11-24T14:55:00Z">
+  <meta name="okf:tags" content="usage">
+  <meta name="okf:tags" content="egm">
+  <meta name="okf:tags" content="pi">
+  <meta name="okf:tags" content="guide">
+  <style>
+    :root {
+      --bg: #f8f8f6;
+      --surface: #ffffff;
+      --surface-muted: #f0efe9;
+      --border: #e2e0d8;
+      --text: #18181b;
+      --text-muted: #57534e;
+      --accent: #003f5c;
+      --accent-fg: #ffffff;
+      --grid-line: rgba(120, 113, 108, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    code, pre {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .site-header {
+      position: sticky; top: 0; z-index: 20;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(8px);
+      transition: background-color 160ms ease, border-color 160ms ease;
+    }
+    .header-inner {
+      max-width: 1120px; margin: 0 auto; padding: 0 1.25rem;
+      height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .header-id { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+    .doc-title { font-weight: 600; font-size: 0.95rem; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge {
+      flex-shrink: 0; font-size: 0.68rem; font-weight: 500; padding: 0.12rem 0.55rem;
+      border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface-muted); color: var(--text-muted);
+    }
+    .controls { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    .ctl {
+      font: inherit; font-size: 0.75rem; font-weight: 500;
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.35rem 0.6rem; border-radius: 0.5rem;
+      border: 1px solid var(--border); background: var(--surface-muted); color: var(--text);
+      cursor: pointer; transition: opacity 120ms ease, border-color 120ms ease;
+    }
+    .ctl:hover { opacity: 0.85; }
+    select.ctl { padding-right: 1.7rem; outline: none; }
+    .ctl svg { display: block; }
+
+    article { max-width: 800px; margin: 0 auto; padding: 2.5rem 1.5rem 4.5rem; }
+
+    h1, h2, h3, h4, h5, h6 { line-height: 1.25; color: var(--text); font-weight: 650; }
+    h1 { font-size: 2.1rem; letter-spacing: -0.02em; margin: 0 0 1.1rem; }
+    h2 {
+      font-size: 1.38rem; letter-spacing: -0.01em;
+      margin: 2.6rem 0 0.9rem; padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 1.12rem; margin: 1.9rem 0 0.7rem; }
+    h4, h5, h6 { font-size: 1rem; margin: 1.5rem 0 0.6rem; }
+    p { margin: 0.9rem 0; }
+    ul, ol { margin: 0.9rem 0; padding-left: 1.5rem; }
+    li { margin: 0.32rem 0; }
+    a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    a:hover { text-decoration: underline; }
+    strong { font-weight: 650; }
+
+    code {
+      background: var(--surface-muted); border: 1px solid var(--border);
+      border-radius: 5px; padding: 0.08em 0.35em; font-size: 0.86em;
+      word-break: break-word;
+    }
+    h1 code, h2 code, h3 code { font-size: 0.9em; }
+    pre {
+      background: var(--surface-muted); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.1rem; margin: 1.1rem 0;
+      overflow-x: auto; font-size: 0.8rem; line-height: 1.55;
+    }
+    pre code { background: none; border: none; padding: 0; font-size: inherit; word-break: normal; }
+
+    table { width: 100%; border-collapse: collapse; margin: 1.1rem 0; font-size: 0.9rem; }
+    th, td { border: 1px solid var(--border); padding: 0.45rem 0.7rem; text-align: left; vertical-align: top; }
+    thead th { background: var(--surface-muted); font-weight: 600; }
+
+    blockquote {
+      margin: 1.1rem 0; padding: 0.4rem 1.1rem;
+      border-left: 3px solid var(--accent);
+      background: var(--surface-muted); border-radius: 0 6px 6px 0;
+      color: var(--text-muted);
+    }
+    blockquote p { margin: 0.4rem 0; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2.4rem 0; }
+
+    @media (max-width: 640px) {
+      .doc-title { font-size: 0.85rem; }
+      article { padding: 1.75rem 1.1rem 3.5rem; }
+      h1 { font-size: 1.7rem; }
+    }
+    @media print {
+      .controls { display: none; }
+      body { background: #ffffff; }
+      .site-header { position: static; backdrop-filter: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-id">
+        <span class="doc-title">Using EGM with Pi</span>
+        <span class="badge">stable</span>
+      </div>
+      <div class="controls">
+        <select id="palette-select" class="ctl" aria-label="Color palette">
+          <option value="dusk">Dusk Spectrum</option>
+          <option value="editorial">Editorial Paper</option>
+          <option value="nordic">Nordic Mineral</option>
+          <option value="okabe">Okabe-Ito Refined</option>
+          <option value="botanical">Botanical Ink</option>
+        </select>
+        <button id="theme-toggle" class="ctl" title="Toggle light/dark mode">
+          <span id="theme-icon" aria-hidden="true"></span>
+          <span id="theme-label">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <article>
+      <h1>Using EGM with Pi</h1>
+
+      <p>This package ports the <a href="https://github.com/google/elephant-goldfish-model">Elephant-Goldfish Model (EGM)</a>
+      to the <a href="https://github.com/earendil-works/pi-coding-agent">Pi coding agent</a>.</p>
+
+      <h2 id="what-is-different-on-pi">What is different on Pi</h2>
+
+      <p>This repository is a Pi package: the EGM skills, reviewer personas, and document
+      standards are vendored content, while the harness-specific behavior lives in a
+      Pi extension (<code>extensions/</code>) (internals documented in
+      <a href="architecture.html">architecture.md</a>) that registers four tools and a set of <code>/egm-*</code>
+      commands on session start. Instead of your harness's native subagent and
+      question tools, Pi sessions drive EGM through these extension-registered tools:
+      <code>egm_goldfish</code> (zero-context reviewer spawning), <code>egm_bootstrap</code> (recursive
+      directory documentation), <code>egm_ask</code> (single-select
+      interactive gates), and <code>egm_state</code> (durable pipeline state); the <code>/egm-*</code>
+      commands start each vendored skill by name (see <a href="#commands">Commands</a>). The vendored skill
+      text is byte-identical to upstream except for minimal scripted adaptations
+      (see <code>UPSTREAM.md</code> and <code>scripts/adapt-pi.mjs</code>); never hand-edit vendored files.</p>
+
+      <h2 id="install">Install</h2>
+
+      <p>From a published git repository:</p>
+
+      <pre><code>pi install git:github.com/&lt;owner&gt;/pi-elephant-goldfish</code></pre>
+
+      <p>For development, load the extension from a checkout of this repository:</p>
+
+      <pre><code>pi -e .</code></pre>
+
+      <h2 id="delegation-mapping">Delegation mapping</h2>
+
+      <table>
+        <thead>
+          <tr><th>Upstream harness mechanism</th><th>On Pi</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Antigravity <code>invoke_subagent</code></td><td><code>egm_goldfish</code> tool</td></tr>
+          <tr><td>Claude Code <code>Agent</code> tool</td><td><code>egm_goldfish</code> tool</td></tr>
+          <tr><td>Codex <code>spawn_agent</code></td><td><code>egm_goldfish</code> tool</td></tr>
+          <tr><td>Bootstrap recursive sub-orchestrator workers</td><td><code>egm_bootstrap</code> tool</td></tr>
+          <tr><td><code>ask_question</code> gate</td><td><code>egm_ask</code> tool</td></tr>
+          <tr><td>Named personas (harness-registered subagent types)</td><td>Persona-file loading inside zero-context <code>pi --print</code> children</td></tr>
+          <tr><td>Synthesizer nesting (subagents spawning subagents)</td><td>Extension-side fan-out/fan-in</td></tr>
+        </tbody>
+      </table>
+
+      <p><code>egm_goldfish</code> launches <code>pi --print</code> subprocesses with no conversation history,
+      restricted to read-only tools, and instructs each child to read the requested
+      persona file from this package first. The extension fans reviewers out in
+      parallel, collects their reports, and normalizes and deduplicates the findings
+      itself, so no reviewer ever needs to nest another subagent.</p>
+
+      <h2 id="artifact-directory-and-layout">Artifact directory and layout</h2>
+
+      <p>The artifact root resolves from the <code>EGM_ARTIFACT_DIR</code> environment variable,
+      then an <code>EGM artifact directory: &lt;path&gt;</code> line in <code>AGENTS.md</code>/<code>CLAUDE.md</code>, then
+      the working directory. Inside it, artifacts are arranged structurally by
+      default — one folder per design:</p>
+
+      <pre><code>&lt;artifact-dir&gt;/egm/
+├── &lt;feature-slug&gt;/          # concepts_brief.md, design_draft.md, *_report.md
+└── bootstrap/bootstrap_report.md</code></pre>
+
+      <p>Agree on a short kebab-case <code>&lt;feature-slug&gt;</code> per design at the first gate and
+      reuse it for that design's brief, draft, and reports; pass the same value as
+      <code>egm_goldfish</code>'s <code>slug</code> parameter. Setting <code>EGM_ARTIFACT_LAYOUT=flat</code> (env var,
+      or an <code>EGM artifact layout: flat</code> line in <code>AGENTS.md</code>/<code>CLAUDE.md</code>) restores the
+      legacy flat layout, with every artifact written directly in the artifact
+      root.</p>
+
+      <h2 id="commands">Commands</h2>
+
+      <p>The extension registers seven <code>/egm-*</code> commands, one per vendored skill. Each
+      command reads the skill's <code>SKILL.md</code>, strips the YAML frontmatter, and sends
+      the body as your message (with your command arguments appended), so the model
+      receives the upstream instructions directly. This is equivalent to running the
+      corresponding <code>/skill:egm-&lt;name&gt;</code> skill command, but works identically in TUI,
+      RPC, JSON, and print modes.</p>
+
+      <table>
+        <thead>
+          <tr><th>Command</th><th>Skill</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>/egm-brainstorm</code></td><td><code>skills/egm-brainstorm</code></td><td>Interactive ideation and refinement of a half-baked concept.</td></tr>
+          <tr><td><code>/egm-draft</code></td><td><code>skills/egm-draft</code></td><td>Draft a design document section-by-section from a concepts brief.</td></tr>
+          <tr><td><code>/egm-review</code></td><td><code>skills/egm-review</code></td><td>Run the five-stage Goldfish review protocol on a design document.</td></tr>
+          <tr><td><code>/egm-review-loop</code></td><td><code>skills/egm-review-loop</code></td><td>Run the antagonistic review loop against a document standard.</td></tr>
+          <tr><td><code>/egm-resolve</code></td><td><code>skills/egm-resolve</code></td><td>Resolve Goldfish findings into approved document edits.</td></tr>
+          <tr><td><code>/egm-drift-report</code></td><td><code>skills/egm-drift-report</code></td><td>Detect drift between design documents and the code.</td></tr>
+          <tr><td><code>/egm-bootstrap</code></td><td><code>skills/egm-bootstrap</code></td><td>Bootstrap EGM directory READMEs across a repository subtree.</td></tr>
+        </tbody>
+      </table>
+
+      <p>Arguments pass through verbatim. For example, <code>/egm-review
+      docs/designs/foo.md uninterrupted</code> runs the review pipeline on that document
+      with the uninterrupted preset.</p>
+
+      <h2 id="tools">Tools</h2>
+
+      <table>
+        <thead>
+          <tr><th>Tool</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>egm_ask</code></td><td>Single-select interactive gate for EGM workflows (one question, 2-8 options; each option is a plain string or a <code>{title, description}</code> object, so ask-user-style option objects validate and render instead of failing schema validation). Falls back to plain chat when no interactive UI is available.</td></tr>
+          <tr><td><code>egm_goldfish</code></td><td>Spawns zero-context Goldfish reviewers as read-only <code>pi --print</code> subprocesses, fans them out in parallel, and writes the consolidated report per the artifact layout (pass <code>slug</code> to file it under <code>&lt;artifact-dir&gt;/egm/&lt;slug&gt;/</code>; a number is appended on filename collisions).</td></tr>
+          <tr><td><code>egm_bootstrap</code></td><td>Recursively bootstraps EGM contract <code>README.md</code> files: discovery, safety gate, pruning, partitioning, parallel read-and-write worker subprocesses, JSON return validation, root roll-up, and a mandatory final verification pass. Its own report is filed under <code>&lt;artifact-dir&gt;/egm/bootstrap/</code> (flat mode: the artifact root). See <a href="#bootstrap">Bootstrap</a>.</td></tr>
+          <tr><td><code>egm_state</code></td><td>Persists or returns the EGM review pipeline state for the current session branch (stored as durable session entries, so a long review survives compaction and branching).</td></tr>
+        </tbody>
+      </table>
+
+      <p>The review pipeline itself is model-driven from the vendored skill text; the
+      tools only provide the harness-specific mechanisms the skills describe.</p>
+
+      <h2 id="environment-knobs">Environment knobs</h2>
+
+      <table>
+        <thead>
+          <tr><th>Variable</th><th>Default</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>EGM_ARTIFACT_LAYOUT</code></td><td><code>structured</code></td><td>Artifact arrangement: <code>structured</code> (one <code>egm/&lt;slug&gt;/</code> folder per design) or <code>flat</code> (legacy, everything in the artifact root). Also settable via an <code>EGM artifact layout:</code> line in <code>AGENTS.md</code>/<code>CLAUDE.md</code>.</td></tr>
+          <tr><td><code>EGM_ARTIFACT_DIR</code></td><td>working directory</td><td>Artifact root directory. Also settable via an <code>EGM artifact directory: &lt;path&gt;</code> line in <code>AGENTS.md</code>/<code>CLAUDE.md</code>.</td></tr>
+          <tr><td><code>EGM_GOLDFISH_TIMEOUT_MS</code></td><td><code>900000</code></td><td>Timeout for each spawned Goldfish reviewer child.</td></tr>
+          <tr><td><code>EGM_GOLDFISH_MAX_CONCURRENT</code></td><td><code>3</code></td><td>Maximum number of Goldfish children running at the same time.</td></tr>
+          <tr><td><code>EGM_BOOTSTRAP_TIMEOUT_MS</code></td><td><code>900000</code></td><td>Timeout for each spawned <code>egm_bootstrap</code> worker child.</td></tr>
+          <tr><td><code>EGM_BOOTSTRAP_MAX_CONCURRENT</code></td><td><code>3</code></td><td>Maximum number of bootstrap worker children running at the same time.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="bootstrap">Bootstrap</h2>
+
+      <p><code>egm_bootstrap</code> ports the upstream <code>egm-bootstrap</code> root orchestrator. Call it
+      with <code>path</code> (the subtree to document, required) and optionally
+      <code>targetFilename</code> (default <code>README.md</code>). The extension performs,
+      deterministically: level-by-level BFS discovery (hidden/ignored directories
+      skipped, <code>.gitignore</code>/<code>.egmignore</code> basenames honored), bottom-up pruning of
+      non-code and test-only directories, adaptive partitioning, and a final
+      verification pass. Documentation itself is written by fresh <code>pi --print</code>
+      workers restricted to <code>read,grep,find,ls,write,edit</code> tools; each worker must
+      end with a JSON <code>subtree_index</code> payload (one retry on invalid output, then
+      placeholder entries), and a final root-compiler child rolls everything up into
+      the root blueprint.</p>
+
+      <p>Safety gate: when more than 15 directories survive pruning and <code>approved</code> is
+      not <code>true</code>, the tool returns an approval request instead of running. Present
+      it to the user with <code>egm_ask</code>, and only re-call <code>egm_bootstrap</code> with
+      <code>approved: true</code> after explicit approval.</p>
+
+      <p>The result reports the number of contract files written/corrected, the
+      verification violation count, and the report path
+      (<code>&lt;artifact dir&gt;/bootstrap_report.md</code>); read the report file for per-worker
+      status and every violation.</p>
+
+      <h2 id="support-status">Support status</h2>
+
+      <p>Experimental but exercised: vendored content tracks upstream at pinned
+      revision <code>a8380ab</code> (see <code>UPSTREAM.md</code>), and the extension-side runtime
+      (<code>egm_goldfish</code>, <code>egm_bootstrap</code>, <code>egm_ask</code>, <code>egm_state</code>, the <code>/egm-*</code>
+      commands) has been verified end-to-end against a real pi dev install.</p>
+
+      <p>What is verified (see <a href="#testing">Testing</a> for the record and how to re-run):</p>
+
+      <ul>
+        <li>Unit and content checks port the upstream suite's intent and thresholds
+        (frontmatter schema, the 24,000-byte skill body limit, persona/standard
+        coverage, link integrity, manifest, adaptation invariants, <code>adapt-pi.mjs</code>
+        sync fidelity over a pristine upstream tree).</li>
+        <li>A headless, uninterrupted Goldfish review end-to-end: <code>/egm-review</code> on a
+        fixture ran all five stages through 9 zero-context reviewer children and
+        produced a consolidated report whose verdict caught every planted flaw.</li>
+        <li>A bootstrap end-to-end: <code>egm_bootstrap</code> on a 6-directory fixture wrote all
+        contract files through parallel workers with 0 verification violations, and
+        the >15-directory safety gate fired without spawning workers.</li>
+      </ul>
+
+      <p>What is verified manually only: interactive multi-turn flows (brainstorm
+      intake, draft section-by-section, review gates answered in the TUI). Follow
+      the per-skill checklists in <code>skills/*/TEST.md</code> for those.</p>
+
+      <h2 id="testing">Testing</h2>
+
+      <p>Run <code>npm test</code> (fast, offline; integration tests are env-gated behind
+      <code>EGM_E2E</code>) and <code>npm run check:content</code>. Exact commands, the env-gated
+      tier, and the recorded phase-by-phase harness verification evidence live in
+      <a href="../TESTING.md">TESTING.md</a>.</p>
+
+      <h2 id="known-limits">Known limits</h2>
+
+      <ul>
+        <li><strong>TUI gates in RPC are forwarded minimally.</strong> <code>egm_ask</code> renders a native
+        SelectList dialog in the TUI; in RPC/print mode the gate degrades to a
+        plain-chat question instead of a structured dialog.</li>
+        <li><strong>No artifact side-panel.</strong> Reports, briefs, and drafts land in the artifact
+        directory as files; there is no pi-side UI surface listing them.</li>
+        <li><strong>Named personas are emulated.</strong> Upstream harnesses register personas as
+        native subagent types; on Pi, a persona is a vendored markdown file that
+        each zero-context <code>pi --print</code> child reads before judging.</li>
+        <li><strong>npm publish pending.</strong> Distribution today is the git repository (dev
+        install via <code>pi -e .</code>, later <code>pi install git:...</code>); a published npm package
+        is deferred to the release phase.</li>
+      </ul>
+    </article>
+  </main>
+
+  <script>
+    /* Design system: palette registry & light/dark sync (from artifacts/_template.html). */
+    const DEFAULT_PALETTE = 'dusk';
+    const DEFAULT_MODE = 'light';
+
+    const THEMES = {
+      dusk: {
+        name: 'Dusk Spectrum',
+        light: {
+          bg: '#f8f8f6', surface: '#ffffff', surfaceMuted: '#f0efe9', border: '#e2e0d8',
+          text: '#18181b', textMuted: '#57534e', accent: '#003f5c', gridLine: 'rgba(120,113,108,0.18)',
+          mermaidFill: '#eef4f7', mermaidSecondary: '#f6f3f9',
+          series: ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600']
+        },
+        dark: {
+          bg: '#18181a', surface: '#222225', surfaceMuted: '#2c2c30', border: '#36363b',
+          text: '#f4f4f5', textMuted: '#a1a1aa', accent: '#ff6361', gridLine: 'rgba(161,161,170,0.16)',
+          mermaidFill: '#1e2c35', mermaidSecondary: '#2a2738',
+          series: ['#2c7da0', '#847cc4', '#d46ca9', '#ff7b79', '#ffb733']
+        }
+      },
+      editorial: {
+        name: 'Editorial Paper',
+        light: {
+          bg: '#faf8f5', surface: '#ffffff', surfaceMuted: '#f2eee7', border: '#e5dfd3',
+          text: '#1c1917', textMuted: '#635c55', accent: '#1b4965', gridLine: 'rgba(99,92,85,0.16)',
+          mermaidFill: '#edf4f8', mermaidSecondary: '#fbf3ef',
+          series: ['#1b4965', '#5fa8d3', '#3d8b7d', '#e07a5f', '#e9b85b']
+        },
+        dark: {
+          bg: '#1c1a17', surface: '#26231f', surfaceMuted: '#302c27', border: '#3d3832',
+          text: '#f5f2ec', textMuted: '#a8a29e', accent: '#e07a5f', gridLine: 'rgba(168,162,158,0.15)',
+          mermaidFill: '#1f303c', mermaidSecondary: '#362823',
+          series: ['#4a8bb2', '#7cc0e6', '#56b0a0', '#ea9279', '#f0c774']
+        }
+      },
+      nordic: {
+        name: 'Nordic Mineral',
+        light: {
+          bg: '#f6f8f9', surface: '#ffffff', surfaceMuted: '#ebf0f2', border: '#dce4e8',
+          text: '#142026', textMuted: '#586b75', accent: '#264653', gridLine: 'rgba(88,107,117,0.16)',
+          mermaidFill: '#eaf1f3', mermaidSecondary: '#edf6f5',
+          series: ['#264653', '#457b9d', '#2a9d8f', '#d98c5f', '#9b6a82']
+        },
+        dark: {
+          bg: '#14181c', surface: '#1d2329', surfaceMuted: '#262e36', border: '#323d47',
+          text: '#eef2f5', textMuted: '#94a6b3', accent: '#2a9d8f', gridLine: 'rgba(148,166,179,0.15)',
+          mermaidFill: '#1d2f36', mermaidSecondary: '#1c3330',
+          series: ['#4e7d91', '#6ba0c2', '#42baa9', '#e6a37c', '#ba89a1']
+        }
+      },
+      okabe: {
+        name: 'Okabe-Ito Refined',
+        light: {
+          bg: '#fafafa', surface: '#ffffff', surfaceMuted: '#f0f0f2', border: '#e1e1e6',
+          text: '#141417', textMuted: '#5c5c66', accent: '#0072b2', gridLine: 'rgba(92,92,102,0.16)',
+          mermaidFill: '#ebf4fa', mermaidSecondary: '#eaf7f3',
+          series: ['#0072b2', '#009e73', '#e69f00', '#cc79a7', '#d55e00']
+        },
+        dark: {
+          bg: '#161618', surface: '#202024', surfaceMuted: '#2a2a30', border: '#36363e',
+          text: '#f4f4f7', textMuted: '#a0a0ad', accent: '#38a1db', gridLine: 'rgba(160,160,173,0.15)',
+          mermaidFill: '#172d3b', mermaidSecondary: '#16332b',
+          series: ['#38a1db', '#2bc299', '#f5b324', '#de93bd', '#f07b26']
+        }
+      },
+      botanical: {
+        name: 'Botanical Ink',
+        light: {
+          bg: '#f8f9fa', surface: '#ffffff', surfaceMuted: '#eef1f0', border: '#dde3e1',
+          text: '#161d1b', textMuted: '#566360', accent: '#1f6f78', gridLine: 'rgba(86,99,96,0.16)',
+          mermaidFill: '#eaf4f5', mermaidSecondary: '#f1f0f8',
+          series: ['#1f6f78', '#6c63a6', '#5b8c5a', '#d4a03c', '#d1603d']
+        },
+        dark: {
+          bg: '#141518', surface: '#1e2024', surfaceMuted: '#272a30', border: '#343840',
+          text: '#f1f3f5', textMuted: '#9aa3ad', accent: '#3ca3ae', gridLine: 'rgba(154,163,173,0.15)',
+          mermaidFill: '#1a2f33', mermaidSecondary: '#272438',
+          series: ['#3ca3ae', '#8f87c9', '#7bb079', '#e5b657', '#e37e5e']
+        }
+      }
+    };
+
+    const ICONS = {
+      moon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>',
+      sun: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>'
+    };
+
+    const state = {
+      palette: localStorage.getItem('okf-doc-palette') || DEFAULT_PALETTE,
+      mode: localStorage.getItem('okf-doc-mode') || DEFAULT_MODE
+    };
+    if (!THEMES[state.palette]) state.palette = DEFAULT_PALETTE;
+    if (state.mode !== 'light' && state.mode !== 'dark') state.mode = DEFAULT_MODE;
+
+    function getActiveTheme() {
+      return THEMES[state.palette][state.mode];
+    }
+
+    function applyTheme() {
+      const t = getActiveTheme();
+      const root = document.documentElement;
+      root.setAttribute('data-theme', state.mode);
+
+      const vars = {
+        '--bg': t.bg,
+        '--surface': t.surface,
+        '--surface-muted': t.surfaceMuted,
+        '--border': t.border,
+        '--text': t.text,
+        '--text-muted': t.textMuted,
+        '--accent': t.accent,
+        '--grid-line': t.gridLine
+      };
+      Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+      localStorage.setItem('okf-doc-palette', state.palette);
+      localStorage.setItem('okf-doc-mode', state.mode);
+
+      document.getElementById('palette-select').value = state.palette;
+      document.getElementById('theme-label').textContent = state.mode === 'dark' ? 'Light' : 'Dark';
+      document.getElementById('theme-icon').innerHTML = state.mode === 'dark' ? ICONS.sun : ICONS.moon;
+    }
+
+    document.getElementById('palette-select').addEventListener('change', (e) => {
+      state.palette = e.target.value;
+      applyTheme();
+    });
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      state.mode = state.mode === 'dark' ? 'light' : 'dark';
+      applyTheme();
+    });
+
+    applyTheme();
+  </script>
+</body>
+</html>

@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>update</title>
+  <meta name="description" content="Archived setup instructions for this repository's artifact design system: project layout, agent rules for artifact generation, the master _template.html source, and example prompts.">
+  <meta name="okf:type" content="doc">
+  <meta name="okf:resource" content="update">
+  <meta name="okf:status" content="stable">
+  <meta name="okf:stale_after" content="2027-05-24">
+  <meta name="okf:generated.at" content="2026-11-24T14:55:00Z">
+  <meta name="okf:tags" content="archive">
+  <meta name="okf:tags" content="design-system">
+  <meta name="okf:tags" content="artifacts">
+  <meta name="okf:tags" content="setup">
+  <style>
+    :root {
+      --bg: #f8f8f6;
+      --surface: #ffffff;
+      --surface-muted: #f0efe9;
+      --border: #e2e0d8;
+      --text: #18181b;
+      --text-muted: #57534e;
+      --accent: #003f5c;
+      --accent-fg: #ffffff;
+      --grid-line: rgba(120, 113, 108, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    code, pre {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .site-header {
+      position: sticky; top: 0; z-index: 20;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(8px);
+      transition: background-color 160ms ease, border-color 160ms ease;
+    }
+    .header-inner {
+      max-width: 1120px; margin: 0 auto; padding: 0 1.25rem;
+      height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .header-id { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+    .doc-title { font-weight: 600; font-size: 0.95rem; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge {
+      flex-shrink: 0; font-size: 0.68rem; font-weight: 500; padding: 0.12rem 0.55rem;
+      border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface-muted); color: var(--text-muted);
+    }
+    .controls { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    .ctl {
+      font: inherit; font-size: 0.75rem; font-weight: 500;
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.35rem 0.6rem; border-radius: 0.5rem;
+      border: 1px solid var(--border); background: var(--surface-muted); color: var(--text);
+      cursor: pointer; transition: opacity 120ms ease, border-color 120ms ease;
+    }
+    .ctl:hover { opacity: 0.85; }
+    select.ctl { padding-right: 1.7rem; outline: none; }
+    .ctl svg { display: block; }
+
+    article { max-width: 800px; margin: 0 auto; padding: 2.5rem 1.5rem 4.5rem; }
+
+    h1, h2, h3, h4, h5, h6 { line-height: 1.25; color: var(--text); font-weight: 650; }
+    h1 { font-size: 2.1rem; letter-spacing: -0.02em; margin: 0 0 1.1rem; }
+    h2 {
+      font-size: 1.38rem; letter-spacing: -0.01em;
+      margin: 2.6rem 0 0.9rem; padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 1.12rem; margin: 1.9rem 0 0.7rem; }
+    h4, h5, h6 { font-size: 1rem; margin: 1.5rem 0 0.6rem; }
+    p { margin: 0.9rem 0; }
+    ul, ol { margin: 0.9rem 0; padding-left: 1.5rem; }
+    li { margin: 0.32rem 0; }
+    a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    a:hover { text-decoration: underline; }
+    strong { font-weight: 650; }
+
+    code {
+      background: var(--surface-muted); border: 1px solid var(--border);
+      border-radius: 5px; padding: 0.08em 0.35em; font-size: 0.86em;
+      word-break: break-word;
+    }
+    h1 code, h2 code, h3 code { font-size: 0.9em; }
+    pre {
+      background: var(--surface-muted); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.1rem; margin: 1.1rem 0;
+      overflow-x: auto; font-size: 0.8rem; line-height: 1.55;
+    }
+    pre code { background: none; border: none; padding: 0; font-size: inherit; word-break: normal; }
+
+    table { width: 100%; border-collapse: collapse; margin: 1.1rem 0; font-size: 0.9rem; }
+    th, td { border: 1px solid var(--border); padding: 0.45rem 0.7rem; text-align: left; vertical-align: top; }
+    thead th { background: var(--surface-muted); font-weight: 600; }
+
+    blockquote {
+      margin: 1.1rem 0; padding: 0.4rem 1.1rem;
+      border-left: 3px solid var(--accent);
+      background: var(--surface-muted); border-radius: 0 6px 6px 0;
+      color: var(--text-muted);
+    }
+    blockquote p { margin: 0.4rem 0; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2.4rem 0; }
+
+    @media (max-width: 640px) {
+      .doc-title { font-size: 0.85rem; }
+      article { padding: 1.75rem 1.1rem 3.5rem; }
+      h1 { font-size: 1.7rem; }
+    }
+    @media print {
+      .controls { display: none; }
+      body { background: #ffffff; }
+      .site-header { position: static; backdrop-filter: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-id">
+        <span class="doc-title">update</span>
+        <span class="badge">stable</span>
+      </div>
+      <div class="controls">
+        <select id="palette-select" class="ctl" aria-label="Color palette">
+          <option value="dusk">Dusk Spectrum</option>
+          <option value="editorial">Editorial Paper</option>
+          <option value="nordic">Nordic Mineral</option>
+          <option value="okabe">Okabe-Ito Refined</option>
+          <option value="botanical">Botanical Ink</option>
+        </select>
+        <button id="theme-toggle" class="ctl" title="Toggle light/dark mode">
+          <span id="theme-icon" aria-hidden="true"></span>
+          <span id="theme-label">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <article>
+      <!-- Faithful conversion of docs/archive/update.md. Note: that source stores its
+           markdown backtick/asterisk/underscore markers backslash-escaped and its
+           angle brackets as HTML entities; per markdown rendering semantics those
+           escapes decode to literal characters, which is how they appear here. -->
+
+      <p>Here is the complete, ready-to-use setup: a minimal folder structure, your final agent ruleset, and the production starter template (`./artifacts/_template.html`) pre-wired with **Dusk Spectrum** (`#003f5c`, `#58508d`, `#bc5090`, `#ff6361`, `#ffa600`) as the default, plus the four alternative palettes, automatic light/dark contrast lifting, Chart.js theming, and interactive Mermaid controls.</p>
+
+      <h2 id="project-layout">1. Project Layout</h2>
+
+      <pre><code>your-project/
+├── CLAUDE.md                 # Or GEMINI.md / .cursorrules / AGENTS.md
+└── artifacts/
+    ├── _template.html        # Master design system &amp; helper boilerplate
+    └── &lt;your-artifacts&gt;.html # Generated files (e.g., api-architecture.html)
+</code></pre>
+
+      <p>*(Optional: add `artifacts/*.html` and `!artifacts/_template.html` to `.gitignore` if you want to keep the template versioned without committing throwaway artifacts.)*</p>
+
+      <hr>
+
+      <h2 id="final-agent-rules">2. Final Agent Rules (`CLAUDE.md` / `GEMINI.md` / `.cursorrules`)</h2>
+
+      <p>Paste this section directly into your agent instructions file:</p>
+
+      <pre><code># Artifact Generation Rules
+
+## 1. Trigger, Output &amp; Auto-Open
+- Whenever I ask for a UI, diagram, dashboard, report, visual explainer, or interactive tool, generate a single, self-contained HTML file.
+- Save all artifacts in `./artifacts/` using a descriptive kebab-case filename (e.g., `./artifacts/q3-revenue-dashboard.html`). Create `./artifacts/` if missing.
+- Never overwrite `./artifacts/_template.html`. Use it as the structural and styling reference for every new artifact.
+- Every artifact MUST work directly over the `file://` protocol:
+  - Keep all custom CSS and JavaScript inline inside the single HTML file.
+  - Never use local `fetch()`, relative script/CSS imports, or ESM imports that fail under `file://` CORS.
+  - Always use pinned UMD CDN builds (never floating `@latest` URLs).
+- Immediately after writing or updating an artifact, open it in the default browser via bash:
+  - macOS: `open "&lt;file&gt;"`
+  - Linux: `xdg-open "&lt;file&gt;"`
+  - Windows (PowerShell/Git Bash): `start "" "&lt;file&gt;"`
+
+## 2. Design System &amp; Palettes
+- Copy the CSS variables, `THEMES` registry, layout shell, and theme switcher from `./artifacts/_template.html`.
+- **Default Palette:** `dusk` (`#003f5c`, `#58508d`, `#bc5090`, `#ff6361`, `#ffa600` in light mode, with contrast-lifted dark variants and warm neutral surfaces).
+- **Selectable Palettes:** Support switching via the header selector or prompt override:
+  - `dusk` (default): Bold editorial spectrum for dashboards and general tools.
+  - `editorial`: Warm paper &amp; Prussian/terracotta for executive reports and finance.
+  - `nordic`: Muted petrol &amp; eucalyptus for architecture diagrams and engineering metrics.
+  - `okabe`: High-separation colorblind-safe palette for dense analytical charts.
+  - `botanical`: Balanced teal, iris, and moss for modern SaaS tools and growth metrics.
+- If I specify a palette name in my prompt (e.g., "use nordic palette"), set `DEFAULT_PALETTE` in the generated file accordingly.
+- **Typography &amp; UI:**
+  - Use `Inter` for UI/body text and `JetBrains Mono` with `tabular-nums` for all KPI numbers, metrics, IDs, and code.
+  - Use `lucide` icons (`lucide@0.460.0` UMD) instead of mixed emojis or raw inline SVGs.
+  - Default to light mode unless I ask for dark mode; always preserve the persistent Light/Dark toggle and Palette switcher in the sticky top bar.
+
+## 3. Charts &amp; Data Visualizations
+- **Default Library:** Chart.js 4 (`https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js`).
+- **Advanced Library (Only When Needed):** Apache ECharts 5 (`https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js`) strictly for Sankey flows, heatmaps, treemaps, gauges, or zoomable financial series.
+- **Chart Rules:**
+  - Always wrap `&lt;canvas&gt;` in a `relative` container with an explicit height (e.g., `class="relative h-72 w-full"`) and set `responsive: true, maintainAspectRatio: false`.
+  - Never hardcode hex colors inside datasets—pull colors from `getActiveTheme().series` and register every chart instance in the `charts` array so colors, gridlines, and text re-theme cleanly when toggling Dark Mode or Palettes.
+  - For 2–3 series charts, skip adjacent indices for stronger contrast (e.g., `[0, 3]` or `[0, 2, 4]`).
+
+## 4. Diagrams (Mermaid)
+- **Library:** Mermaid 11 (`https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js`).
+- **Diagram Rules:**
+  - Always initialize with `startOnLoad: false` and `theme: 'base'`, populating `themeVariables` dynamically from `getActiveTheme()`.
+  - Store raw Mermaid definitions in JS (`MERMAID_DIAGRAMS`) so diagrams cleanly re-render whenever Light/Dark mode or the active palette changes.
+  - Place diagrams inside a `.diagram-stage` card with Zoom (`+` / `-` / `Reset`), **Copy Source**, and **Export SVG** controls.
+
+## 5. Content &amp; Code Hygiene
+- Strip unused starter sections from `_template.html` when generating a real artifact (e.g., omit the Mermaid script and diagram card if the request is a pure KPI dashboard, or omit Chart.js if it is a pure architecture diagram).
+- Use real context from the conversation whenever available. If creating a mockup with sample data, generate realistic domain data and badge it as `Sample Data` in the header.
+</code></pre>
+
+      <hr>
+
+      <h2 id="master-template">3. Master Template (`./artifacts/_template.html`)</h2>
+
+      <p>Save this file once at `./artifacts/_template.html`. Opening it in your browser right now gives you a live working reference of all five palettes, light/dark contrast lifting, synchronized Chart.js colors, and zoomable/exportable Mermaid diagrams.</p>
+
+      <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en" data-theme="light"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8" /&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+  &lt;title&gt;Artifact Template&lt;/title&gt;
+
+  &lt;!-- Fonts --&gt;
+  &lt;link rel="preconnect" href="https://fonts.googleapis.com" /&gt;
+  &lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /&gt;
+  &lt;link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet" /&gt;
+
+  &lt;!-- Pinned file://-safe UMD CDNs --&gt;
+  &lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"&gt;&lt;/script&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"&gt;&lt;/script&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"&gt;&lt;/script&gt;
+
+  &lt;style&gt;
+    :root {
+      --bg: #f8f8f6;
+      --surface: #ffffff;
+      --surface-muted: #f0efe9;
+      --border: #e2e0d8;
+      --text: #18181b;
+      --text-muted: #57534e;
+      --accent: #003f5c;
+      --accent-fg: #ffffff;
+      --grid-line: rgba(120, 113, 108, 0.18);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+
+    .card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      transition: background-color 160ms ease, border-color 160ms ease;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      background-color: var(--surface-muted);
+      color: var(--text);
+      cursor: pointer;
+      transition: opacity 120ms ease, border-color 120ms ease;
+    }
+    .btn:hover { opacity: 0.85; }
+
+    .diagram-stage {
+      background-color: var(--surface-muted);
+      background-image: radial-gradient(var(--border) 1px, transparent 1px);
+      background-size: 16px 16px;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+    }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body class="min-h-screen antialiased"&gt;
+
+  &lt;!-- Sticky Header --&gt;
+  &lt;header class="sticky top-0 z-20 border-b backdrop-blur-md" style="border-color: var(--border); background: color-mix(in srgb, var(--surface) 88%, transparent);"&gt;
+    &lt;div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4"&gt;
+      &lt;div class="min-w-0"&gt;
+        &lt;div class="flex items-center gap-2.5"&gt;
+          &lt;h1 class="text-base font-semibold tracking-tight truncate"&gt;Artifact Title&lt;/h1&gt;
+          &lt;span class="text-[11px] font-medium px-2 py-0.5 rounded-full" style="background: var(--surface-muted); color: var(--text-muted); border: 1px solid var(--border);"&gt;
+            Template
+          &lt;/span&gt;
+        &lt;/div&gt;
+        &lt;p class="text-xs truncate" style="color: var(--text-muted);"&gt;Concise subtitle, scope, or date&lt;/p&gt;
+      &lt;/div&gt;
+
+      &lt;div class="flex items-center gap-2 shrink-0"&gt;
+        &lt;select id="palette-select" aria-label="Color palette" class="btn pr-6 outline-none"&gt;
+          &lt;option value="dusk"&gt;Dusk Spectrum&lt;/option&gt;
+          &lt;option value="editorial"&gt;Editorial Paper&lt;/option&gt;
+          &lt;option value="nordic"&gt;Nordic Mineral&lt;/option&gt;
+          &lt;option value="okabe"&gt;Okabe-Ito Refined&lt;/option&gt;
+          &lt;option value="botanical"&gt;Botanical Ink&lt;/option&gt;
+        &lt;/select&gt;
+
+        &lt;button id="theme-toggle" class="btn" title="Toggle light/dark mode"&gt;
+          &lt;i id="theme-icon" data-lucide="moon" class="w-3.5 h-3.5"&gt;&lt;/i&gt;
+          &lt;span id="theme-label"&gt;Dark&lt;/span&gt;
+        &lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+
+  &lt;!-- Main Workspace --&gt;
+  &lt;main class="max-w-7xl mx-auto p-6 space-y-6"&gt;
+
+    &lt;!-- KPI Row --&gt;
+    &lt;section class="grid grid-cols-1 sm:grid-cols-3 gap-4"&gt;
+      &lt;div class="card p-4"&gt;
+        &lt;p class="text-xs font-medium" style="color: var(--text-muted);"&gt;Primary Metric&lt;/p&gt;
+        &lt;p class="text-2xl font-semibold font-mono tabular-nums mt-1"&gt;1,284&lt;/p&gt;
+        &lt;p class="text-xs mt-1" style="color: var(--text-muted);"&gt;+12.4% vs prior period&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class="card p-4"&gt;
+        &lt;p class="text-xs font-medium" style="color: var(--text-muted);"&gt;Median Latency&lt;/p&gt;
+        &lt;p class="text-2xl font-semibold font-mono tabular-nums mt-1"&gt;142 ms&lt;/p&gt;
+        &lt;p class="text-xs mt-1" style="color: var(--text-muted);"&gt;p95: 310 ms&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class="card p-4"&gt;
+        &lt;p class="text-xs font-medium" style="color: var(--text-muted);"&gt;Active Palette&lt;/p&gt;
+        &lt;div id="swatch-strip" class="flex items-center gap-1.5 mt-2.5"&gt;&lt;/div&gt;
+        &lt;p id="swatch-label" class="text-xs font-mono mt-1.5" style="color: var(--text-muted);"&gt;&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/section&gt;
+
+    &lt;!-- Charts + Diagrams Grid --&gt;
+    &lt;section class="grid grid-cols-1 lg:grid-cols-2 gap-6"&gt;
+
+      &lt;!-- Chart.js Card --&gt;
+      &lt;div class="card p-5 flex flex-col"&gt;
+        &lt;div class="flex items-center justify-between gap-2 mb-4"&gt;
+          &lt;div&gt;
+            &lt;h2 class="text-sm font-semibold"&gt;Category Performance&lt;/h2&gt;
+            &lt;p class="text-xs" style="color: var(--text-muted);"&gt;Chart.js 4 with automatic theme &amp;amp; palette sync&lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="relative h-72 w-full"&gt;
+          &lt;canvas id="sample-chart"&gt;&lt;/canvas&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- Mermaid Card --&gt;
+      &lt;div class="card p-5 flex flex-col"&gt;
+        &lt;div class="flex flex-wrap items-center justify-between gap-2 mb-4"&gt;
+          &lt;div&gt;
+            &lt;h2 class="text-sm font-semibold"&gt;Workflow Architecture&lt;/h2&gt;
+            &lt;p class="text-xs" style="color: var(--text-muted);"&gt;Mermaid 11 with zoom &amp;amp; SVG export&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;div class="flex items-center gap-1.5"&gt;
+            &lt;button class="btn" onclick="zoomDiagram('main', -0.15)" title="Zoom out"&gt;
+              &lt;i data-lucide="zoom-out" class="w-3.5 h-3.5"&gt;&lt;/i&gt;
+            &lt;/button&gt;
+            &lt;button class="btn" onclick="zoomDiagram('main', 0)" title="Reset zoom"&gt;100%&lt;/button&gt;
+            &lt;button class="btn" onclick="zoomDiagram('main', 0.15)" title="Zoom in"&gt;
+              &lt;i data-lucide="zoom-in" class="w-3.5 h-3.5"&gt;&lt;/i&gt;
+            &lt;/button&gt;
+            &lt;button class="btn" id="copy-mermaid-btn" onclick="copyMermaid('main', this)"&gt;
+              &lt;i data-lucide="copy" class="w-3.5 h-3.5"&gt;&lt;/i&gt;&lt;span&gt;Copy&lt;/span&gt;
+            &lt;/button&gt;
+            &lt;button class="btn" onclick="downloadSvg('main', 'workflow-diagram.svg')"&gt;
+              &lt;i data-lucide="download" class="w-3.5 h-3.5"&gt;&lt;/i&gt;&lt;span&gt;SVG&lt;/span&gt;
+            &lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="diagram-stage flex-1 min-h-[18rem] overflow-auto p-4 flex items-center justify-center"&gt;
+          &lt;div id="mermaid-main" class="origin-center transition-transform duration-150"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+    &lt;/section&gt;
+  &lt;/main&gt;
+
+  &lt;script&gt;
+    /* ============================================================
+     * 1. DESIGN SYSTEM &amp; PALETTE REGISTRY
+     * ============================================================ */
+    const DEFAULT_PALETTE = 'dusk'; // dusk | editorial | nordic | okabe | botanical
+    const DEFAULT_MODE = 'light';   // light | dark
+
+    const THEMES = {
+      dusk: {
+        name: 'Dusk Spectrum',
+        light: {
+          bg: '#f8f8f6', surface: '#ffffff', surfaceMuted: '#f0efe9', border: '#e2e0d8',
+          text: '#18181b', textMuted: '#57534e', accent: '#003f5c', gridLine: 'rgba(120,113,108,0.18)',
+          mermaidFill: '#eef4f7', mermaidSecondary: '#f6f3f9',
+          series: ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600']
+        },
+        dark: {
+          bg: '#18181a', surface: '#222225', surfaceMuted: '#2c2c30', border: '#36363b',
+          text: '#f4f4f5', textMuted: '#a1a1aa', accent: '#ff6361', gridLine: 'rgba(161,161,170,0.16)',
+          mermaidFill: '#1e2c35', mermaidSecondary: '#2a2738',
+          series: ['#2c7da0', '#847cc4', '#d46ca9', '#ff7b79', '#ffb733']
+        }
+      },
+      editorial: {
+        name: 'Editorial Paper',
+        light: {
+          bg: '#faf8f5', surface: '#ffffff', surfaceMuted: '#f2eee7', border: '#e5dfd3',
+          text: '#1c1917', textMuted: '#635c55', accent: '#1b4965', gridLine: 'rgba(99,92,85,0.16)',
+          mermaidFill: '#edf4f8', mermaidSecondary: '#fbf3ef',
+          series: ['#1b4965', '#5fa8d3', '#3d8b7d', '#e07a5f', '#e9b85b']
+        },
+        dark: {
+          bg: '#1c1a17', surface: '#26231f', surfaceMuted: '#302c27', border: '#3d3832',
+          text: '#f5f2ec', textMuted: '#a8a29e', accent: '#e07a5f', gridLine: 'rgba(168,162,158,0.15)',
+          mermaidFill: '#1f303c', mermaidSecondary: '#362823',
+          series: ['#4a8bb2', '#7cc0e6', '#56b0a0', '#ea9279', '#f0c774']
+        }
+      },
+      nordic: {
+        name: 'Nordic Mineral',
+        light: {
+          bg: '#f6f8f9', surface: '#ffffff', surfaceMuted: '#ebf0f2', border: '#dce4e8',
+          text: '#142026', textMuted: '#586b75', accent: '#264653', gridLine: 'rgba(88,107,117,0.16)',
+          mermaidFill: '#eaf1f3', mermaidSecondary: '#edf6f5',
+          series: ['#264653', '#457b9d', '#2a9d8f', '#d98c5f', '#9b6a82']
+        },
+        dark: {
+          bg: '#14181c', surface: '#1d2329', surfaceMuted: '#262e36', border: '#323d47',
+          text: '#eef2f5', textMuted: '#94a6b3', accent: '#2a9d8f', gridLine: 'rgba(148,166,179,0.15)',
+          mermaidFill: '#1d2f36', mermaidSecondary: '#1c3330',
+          series: ['#4e7d91', '#6ba0c2', '#42baa9', '#e6a37c', '#ba89a1']
+        }
+      },
+      okabe: {
+        name: 'Okabe-Ito Refined',
+        light: {
+          bg: '#fafafa', surface: '#ffffff', surfaceMuted: '#f0f0f2', border: '#e1e1e6',
+          text: '#141417', textMuted: '#5c5c66', accent: '#0072b2', gridLine: 'rgba(92,92,102,0.16)',
+          mermaidFill: '#ebf4fa', mermaidSecondary: '#eaf7f3',
+          series: ['#0072b2', '#009e73', '#e69f00', '#cc79a7', '#d55e00']
+        },
+        dark: {
+          bg: '#161618', surface: '#202024', surfaceMuted: '#2a2a30', border: '#36363e',
+          text: '#f4f4f7', textMuted: '#a0a0ad', accent: '#38a1db', gridLine: 'rgba(160,160,173,0.15)',
+          mermaidFill: '#172d3b', mermaidSecondary: '#16332b',
+          series: ['#38a1db', '#2bc299', '#f5b324', '#de93bd', '#f07b26']
+        }
+      },
+      botanical: {
+        name: 'Botanical Ink',
+        light: {
+          bg: '#f8f9fa', surface: '#ffffff', surfaceMuted: '#eef1f0', border: '#dde3e1',
+          text: '#161d1b', textMuted: '#566360', accent: '#1f6f78', gridLine: 'rgba(86,99,96,0.16)',
+          mermaidFill: '#eaf4f5', mermaidSecondary: '#f1f0f8',
+          series: ['#1f6f78', '#6c63a6', '#5b8c5a', '#d4a03c', '#d1603d']
+        },
+        dark: {
+          bg: '#141518', surface: '#1e2024', surfaceMuted: '#272a30', border: '#343840',
+          text: '#f1f3f5', textMuted: '#9aa3ad', accent: '#3ca3ae', gridLine: 'rgba(154,163,173,0.15)',
+          mermaidFill: '#1a2f33', mermaidSecondary: '#272438',
+          series: ['#3ca3ae', '#8f87c9', '#7bb079', '#e5b657', '#e37e5e']
+        }
+      }
+    };
+
+    const state = {
+      palette: localStorage.getItem('artifact-palette') || DEFAULT_PALETTE,
+      mode: localStorage.getItem('artifact-mode') || DEFAULT_MODE,
+      zoom: { main: 1 }
+    };
+
+    if (!THEMES[state.palette]) state.palette = DEFAULT_PALETTE;
+
+    function getActiveTheme() {
+      return THEMES[state.palette][state.mode];
+    }
+
+    /* ============================================================
+     * 2. MERMAID DIAGRAMS &amp; CONTROLS
+     * ============================================================ */
+    const MERMAID_DIAGRAMS = {
+      main: `
+        flowchart LR
+          A([User Prompt]) --&gt; B[Load _template.html]
+          B --&gt; C{Artifact Type}
+          C --&gt;|Metrics| D[Chart.js 4]
+          C --&gt;|Systems| E[Mermaid 11]
+          D --&gt; F[Save ./artifacts/*.html]
+          E --&gt; F
+          F --&gt; G([Auto-Open Browser])
+      `
+    };
+
+    async function renderAllMermaid() {
+      if (typeof mermaid === 'undefined') return;
+      const t = getActiveTheme();
+
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        securityLevel: 'loose',
+        themeVariables: {
+          fontFamily: 'Inter, system-ui, sans-serif',
+          fontSize: '13px',
+          primaryColor: t.mermaidFill,
+          primaryTextColor: t.text,
+          primaryBorderColor: t.series[0],
+          secondaryColor: t.mermaidSecondary,
+          secondaryTextColor: t.text,
+          secondaryBorderColor: t.series[1],
+          tertiaryColor: t.surfaceMuted,
+          tertiaryTextColor: t.text,
+          tertiaryBorderColor: t.series[4],
+          lineColor: t.textMuted,
+          textColor: t.text,
+          edgeLabelBackground: t.surface,
+          clusterBkg: t.surface,
+          clusterBorder: t.border
+        }
+      });
+
+      for (const [id, src] of Object.entries(MERMAID_DIAGRAMS)) {
+        const el = document.getElementById(`mermaid-${id}`);
+        if (!el) continue;
+        const { svg } = await mermaid.render(`svg-${id}-${Date.now()}`, src.trim());
+        el.innerHTML = svg;
+      }
+    }
+
+    function zoomDiagram(id, delta) {
+      state.zoom[id] = delta === 0 ? 1 : Math.min(2.2, Math.max(0.5, (state.zoom[id] || 1) + delta));
+      const el = document.getElementById(`mermaid-${id}`);
+      if (el) el.style.transform = `scale(${state.zoom[id]})`;
+    }
+
+    async function copyMermaid(id, btn) {
+      const src = MERMAID_DIAGRAMS[id]?.trim();
+      if (!src) return;
+      await navigator.clipboard.writeText(src);
+      const label = btn.querySelector('span');
+      const prev = label.textContent;
+      label.textContent = 'Copied';
+      setTimeout(() =&gt; (label.textContent = prev), 1200);
+    }
+
+    function downloadSvg(id, filename) {
+      const svg = document.querySelector(`#mermaid-${id} svg`);
+      if (!svg) return;
+      const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ============================================================
+     * 3. CHART.JS REGISTRY &amp; DYNAMIC RE-THEMING
+     * ============================================================ */
+    const charts = [];
+
+    function initCharts() {
+      const t = getActiveTheme();
+      const ctx = document.getElementById('sample-chart');
+      if (!ctx || typeof Chart === 'undefined') return;
+
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+          datasets: [
+            { label: 'Core Platform', data: [64, 78, 86, 94], _colorIdx: 0, backgroundColor: t.series[0], borderRadius: 6 },
+            { label: 'Automation',    data: [38, 52, 61, 75], _colorIdx: 2, backgroundColor: t.series[2], borderRadius: 6 },
+            { label: 'Analytics',     data: [22, 31, 45, 58], _colorIdx: 4, backgroundColor: t.series[4], borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: t.textMuted, boxWidth: 12, usePointStyle: true } },
+            tooltip: { backgroundColor: t.surface, titleColor: t.text, bodyColor: t.textMuted, borderColor: t.border, borderWidth: 1 }
+          },
+          scales: {
+            x: { ticks: { color: t.textMuted }, grid: { display: false } },
+            y: { ticks: { color: t.textMuted }, grid: { color: t.gridLine }, border: { display: false } }
+          }
+        }
+      });
+
+      charts.push(chart);
+    }
+
+    function updateChartsTheme() {
+      const t = getActiveTheme();
+      charts.forEach((chart) =&gt; {
+        chart.data.datasets.forEach((ds, i) =&gt; {
+          const idx = ds._colorIdx ?? (i % t.series.length);
+          const color = t.series[idx % t.series.length];
+          if (Array.isArray(ds.backgroundColor)) {
+            ds.backgroundColor = ds.data.map((_, j) =&gt; t.series[j % t.series.length]);
+          } else {
+            ds.backgroundColor = color;
+          }
+          if (ds.borderColor) ds.borderColor = color;
+        });
+
+        if (chart.options.scales) {
+          Object.values(chart.options.scales).forEach((scale) =&gt; {
+            if (scale.ticks) scale.ticks.color = t.textMuted;
+            if (scale.grid &amp;&amp; scale.grid.display !== false) scale.grid.color = t.gridLine;
+          });
+        }
+        if (chart.options.plugins?.legend?.labels) {
+          chart.options.plugins.legend.labels.color = t.textMuted;
+        }
+        if (chart.options.plugins?.tooltip) {
+          Object.assign(chart.options.plugins.tooltip, {
+            backgroundColor: t.surface, titleColor: t.text, bodyColor: t.textMuted, borderColor: t.border
+          });
+        }
+        chart.update('none');
+      });
+    }
+
+    /* ============================================================
+     * 4. APPLY THEME &amp; BIND UI CONTROLS
+     * ============================================================ */
+    function renderSwatchStrip() {
+      const t = getActiveTheme();
+      const strip = document.getElementById('swatch-strip');
+      const label = document.getElementById('swatch-label');
+      if (!strip) return;
+      strip.innerHTML = t.series.map((hex) =&gt;
+        `&lt;span title="${hex}" class="h-5 flex-1 rounded" style="background:${hex}"&gt;&lt;/span&gt;`
+      ).join('');
+      if (label) label.textContent = `${THEMES[state.palette].name} (${state.mode})`;
+    }
+
+    function applyTheme() {
+      const t = getActiveTheme();
+      const root = document.documentElement;
+      root.setAttribute('data-theme', state.mode);
+
+      const vars = {
+        '--bg': t.bg,
+        '--surface': t.surface,
+        '--surface-muted': t.surfaceMuted,
+        '--border': t.border,
+        '--text': t.text,
+        '--text-muted': t.textMuted,
+        '--accent': t.accent,
+        '--grid-line': t.gridLine
+      };
+      Object.entries(vars).forEach(([k, v]) =&gt; root.style.setProperty(k, v));
+
+      localStorage.setItem('artifact-palette', state.palette);
+      localStorage.setItem('artifact-mode', state.mode);
+
+      document.getElementById('palette-select').value = state.palette;
+      document.getElementById('theme-label').textContent = state.mode === 'dark' ? 'Light' : 'Dark';
+
+      const icon = document.getElementById('theme-icon');
+      icon.setAttribute('data-lucide', state.mode === 'dark' ? 'sun' : 'moon');
+      lucide.createIcons();
+
+      renderSwatchStrip();
+      updateChartsTheme();
+      renderAllMermaid();
+    }
+
+    document.getElementById('palette-select').addEventListener('change', (e) =&gt; {
+      state.palette = e.target.value;
+      applyTheme();
+    });
+
+    document.getElementById('theme-toggle').addEventListener('click', () =&gt; {
+      state.mode = state.mode === 'dark' ? 'light' : 'dark';
+      applyTheme();
+    });
+
+    // Boot
+    initCharts();
+    applyTheme();
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+      <hr>
+
+      <h2 id="how-it-feels">4. How It Feels in Practice</h2>
+
+      <p>Once those two files are in place, your prompts stay short and natural:</p>
+
+      <p>* **Default dashboard:** *"Create a dashboard comparing monthly cloud spend across AWS, GCP, and Postgres from `costs.csv`."* -> Generates `./artifacts/cloud-spend-dashboard.html` in **Dusk Spectrum** and opens your browser.</p>
+
+      <p>* **Palette override:** *"Build an interactive Mermaid sequence diagram of our OAuth2 token refresh flow—use the nordic palette."* -> Sets `DEFAULT_PALETTE = 'nordic'`, omits Chart.js to keep the file lean, and includes zoom + SVG export.</p>
+
+      <p>* **Iterative updates:** *"Add a doughnut chart for regional breakdown and switch the default to dark mode."* -> Edits the same HTML file in place and refreshes/opens it automatically.</p>
+
+      <p>One small customization worth considering later: if you generate artifacts from inside a codebase, you can add a one-line helper script or alias (e.g., `./artifacts/index.html` auto-regenerated on every artifact save) if you want a local gallery of everything your agent has built.</p>
+    </article>
+  </main>
+
+  <script>
+    /* Design system: palette registry & light/dark sync (from artifacts/_template.html). */
+    const DEFAULT_PALETTE = 'dusk';
+    const DEFAULT_MODE = 'light';
+
+    const THEMES = {
+      dusk: {
+        name: 'Dusk Spectrum',
+        light: {
+          bg: '#f8f8f6', surface: '#ffffff', surfaceMuted: '#f0efe9', border: '#e2e0d8',
+          text: '#18181b', textMuted: '#57534e', accent: '#003f5c', gridLine: 'rgba(120,113,108,0.18)',
+          mermaidFill: '#eef4f7', mermaidSecondary: '#f6f3f9',
+          series: ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600']
+        },
+        dark: {
+          bg: '#18181a', surface: '#222225', surfaceMuted: '#2c2c30', border: '#36363b',
+          text: '#f4f4f5', textMuted: '#a1a1aa', accent: '#ff6361', gridLine: 'rgba(161,161,170,0.16)',
+          mermaidFill: '#1e2c35', mermaidSecondary: '#2a2738',
+          series: ['#2c7da0', '#847cc4', '#d46ca9', '#ff7b79', '#ffb733']
+        }
+      },
+      editorial: {
+        name: 'Editorial Paper',
+        light: {
+          bg: '#faf8f5', surface: '#ffffff', surfaceMuted: '#f2eee7', border: '#e5dfd3',
+          text: '#1c1917', textMuted: '#635c55', accent: '#1b4965', gridLine: 'rgba(99,92,85,0.16)',
+          mermaidFill: '#edf4f8', mermaidSecondary: '#fbf3ef',
+          series: ['#1b4965', '#5fa8d3', '#3d8b7d', '#e07a5f', '#e9b85b']
+        },
+        dark: {
+          bg: '#1c1a17', surface: '#26231f', surfaceMuted: '#302c27', border: '#3d3832',
+          text: '#f5f2ec', textMuted: '#a8a29e', accent: '#e07a5f', gridLine: 'rgba(168,162,158,0.15)',
+          mermaidFill: '#1f303c', mermaidSecondary: '#362823',
+          series: ['#4a8bb2', '#7cc0e6', '#56b0a0', '#ea9279', '#f0c774']
+        }
+      },
+      nordic: {
+        name: 'Nordic Mineral',
+        light: {
+          bg: '#f6f8f9', surface: '#ffffff', surfaceMuted: '#ebf0f2', border: '#dce4e8',
+          text: '#142026', textMuted: '#586b75', accent: '#264653', gridLine: 'rgba(88,107,117,0.16)',
+          mermaidFill: '#eaf1f3', mermaidSecondary: '#edf6f5',
+          series: ['#264653', '#457b9d', '#2a9d8f', '#d98c5f', '#9b6a82']
+        },
+        dark: {
+          bg: '#14181c', surface: '#1d2329', surfaceMuted: '#262e36', border: '#323d47',
+          text: '#eef2f5', textMuted: '#94a6b3', accent: '#2a9d8f', gridLine: 'rgba(148,166,179,0.15)',
+          mermaidFill: '#1d2f36', mermaidSecondary: '#1c3330',
+          series: ['#4e7d91', '#6ba0c2', '#42baa9', '#e6a37c', '#ba89a1']
+        }
+      },
+      okabe: {
+        name: 'Okabe-Ito Refined',
+        light: {
+          bg: '#fafafa', surface: '#ffffff', surfaceMuted: '#f0f0f2', border: '#e1e1e6',
+          text: '#141417', textMuted: '#5c5c66', accent: '#0072b2', gridLine: 'rgba(92,92,102,0.16)',
+          mermaidFill: '#ebf4fa', mermaidSecondary: '#eaf7f3',
+          series: ['#0072b2', '#009e73', '#e69f00', '#cc79a7', '#d55e00']
+        },
+        dark: {
+          bg: '#161618', surface: '#202024', surfaceMuted: '#2a2a30', border: '#36363e',
+          text: '#f4f4f7', textMuted: '#a0a0ad', accent: '#38a1db', gridLine: 'rgba(160,160,173,0.15)',
+          mermaidFill: '#172d3b', mermaidSecondary: '#16332b',
+          series: ['#38a1db', '#2bc299', '#f5b324', '#de93bd', '#f07b26']
+        }
+      },
+      botanical: {
+        name: 'Botanical Ink',
+        light: {
+          bg: '#f8f9fa', surface: '#ffffff', surfaceMuted: '#eef1f0', border: '#dde3e1',
+          text: '#161d1b', textMuted: '#566360', accent: '#1f6f78', gridLine: 'rgba(86,99,96,0.16)',
+          mermaidFill: '#eaf4f5', mermaidSecondary: '#f1f0f8',
+          series: ['#1f6f78', '#6c63a6', '#5b8c5a', '#d4a03c', '#d1603d']
+        },
+        dark: {
+          bg: '#141518', surface: '#1e2024', surfaceMuted: '#272a30', border: '#343840',
+          text: '#f1f3f5', textMuted: '#9aa3ad', accent: '#3ca3ae', gridLine: 'rgba(154,163,173,0.15)',
+          mermaidFill: '#1a2f33', mermaidSecondary: '#272438',
+          series: ['#3ca3ae', '#8f87c9', '#7bb079', '#e5b657', '#e37e5e']
+        }
+      }
+    };
+
+    const ICONS = {
+      moon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>',
+      sun: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>'
+    };
+
+    const state = {
+      palette: localStorage.getItem('okf-doc-palette') || DEFAULT_PALETTE,
+      mode: localStorage.getItem('okf-doc-mode') || DEFAULT_MODE
+    };
+    if (!THEMES[state.palette]) state.palette = DEFAULT_PALETTE;
+    if (state.mode !== 'light' && state.mode !== 'dark') state.mode = DEFAULT_MODE;
+
+    function getActiveTheme() {
+      return THEMES[state.palette][state.mode];
+    }
+
+    function applyTheme() {
+      const t = getActiveTheme();
+      const root = document.documentElement;
+      root.setAttribute('data-theme', state.mode);
+
+      const vars = {
+        '--bg': t.bg,
+        '--surface': t.surface,
+        '--surface-muted': t.surfaceMuted,
+        '--border': t.border,
+        '--text': t.text,
+        '--text-muted': t.textMuted,
+        '--accent': t.accent,
+        '--grid-line': t.gridLine
+      };
+      Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+      localStorage.setItem('okf-doc-palette', state.palette);
+      localStorage.setItem('okf-doc-mode', state.mode);
+
+      document.getElementById('palette-select').value = state.palette;
+      document.getElementById('theme-label').textContent = state.mode === 'dark' ? 'Light' : 'Dark';
+      document.getElementById('theme-icon').innerHTML = state.mode === 'dark' ? ICONS.sun : ICONS.moon;
+    }
+
+    document.getElementById('palette-select').addEventListener('change', (e) => {
+      state.palette = e.target.value;
+      applyTheme();
+    });
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      state.mode = state.mode === 'dark' ? 'light' : 'dark';
+      applyTheme();
+    });
+
+    applyTheme();
+  </script>
+</body>
+</html>
