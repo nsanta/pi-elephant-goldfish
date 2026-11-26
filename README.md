@@ -48,25 +48,47 @@ and the session is notified of the path, then yields the turn.
 Requirements: Pi >= 1.4.0 (tested against 1.4.0). Reviews spawn zero-context `pi --print`
 children, so the `pi` binary must be on `PATH`.
 
-**Option A — from npm** (recommended):
+From npm (recommended):
 
 ```sh
 pi install npm:pi-elephant-goldfish
 ```
 
-**Option B — from the git repository:**
+Or from the git repository:
 
 ```sh
 pi install git:github.com/nsanta/pi-elephant-goldfish
 ```
 
-**Option C — development, from a clone of this repository:**
+Development, from a clone of this repository:
 
 ```sh
 git clone <this-repo> && cd pi-elephant-goldfish
 npm install
 pi -e .
 ```
+
+## Set up the agents (nothing to install)
+
+### Why there is no step
+
+Pi packages can ship **skills** but **not agents** — pi has no mechanism to install agents from a
+package. [pi-artifact-forger](https://github.com/nsanta/pi-artifact-forger) works around that with
+an `npm run install:agent` script that copies its agent into the user-global `~/.pi/agent/agents/`
+directory. This package needs no such step: the personas under `agents/` are vendored **inside the
+package** — seven Goldfish reviewer personas (`zoom_out`, `comprehension`, `design_critic`,
+`implementation_readiness`, `structural`, `style`, `codebase_details`) plus the `synthesizer` and
+`bootstrap_orchestrator` orchestrators — and the extension resolves every persona from the package
+root at runtime (`extensions/lib/paths.ts`). Each spawned `pi --print` reviewer child is told to
+read its persona file straight from the installed package, so npm, git, and local installs all
+behave identically.
+
+### What that means in practice
+
+There is no `~/.pi/agent/agents/` copy to install, re-run after updates, or keep in sync:
+installing or updating the package is installing or updating the agents — the personas that ship
+in the installed package are exactly the ones your reviewers adopt. The vendored document
+standards under `resources/document_standards/` resolve the same way.
 
 ## Quickstart
 
@@ -141,8 +163,8 @@ Set `EGM_ARTIFACT_LAYOUT=flat` to restore the legacy flat layout.
   resume, compaction, and branching are safe.
 
 Port architecture and design decisions: [PLAN.md](PLAN.md). Harness guide for daily use
-(delegation mapping, bootstrap details, known limits): [docs/pi.md](docs/pi.md). How the
-extension works internally (diagrams, tool-by-tool): [docs/architecture.md](docs/architecture.md).
+(delegation mapping, bootstrap details, known limits): [docs/pi.html](docs/pi.html). How the
+extension works internally (diagrams, tool-by-tool): [docs/architecture.html](docs/architecture.html).
 
 ## Development
 
